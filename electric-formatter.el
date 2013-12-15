@@ -1,6 +1,8 @@
 (require 'cl)
 
 (defvar electric-formatter-list nil)
+(make-variable-buffer-local 'electric-formatter-list)
+
 (defun electric-formatter (string)
   (reduce (lambda (res func) (funcall func res))
           (cons string electric-formatter-list)))
@@ -18,18 +20,32 @@
           (insert to-str))
         ))))
 
+;; replace-regexp is better?
 (defun electric-formatter-replace-regexp (regexp rep)
   `(lambda (str) (replace-regexp-in-string ,regexp ,rep str) ))
 
 (add-to-list 'electric-formatter-list
-             (electric-formatter-replace-regexp ",\\(\\w\\)" ", \\1"));;comma
+             (electric-formatter-replace-regexp ",\\(\\w\\|\\s.\\)" ", \\1"))
+;; ruby
+;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" ", \\1" ":foo,:bar")
+
+(setq-default electric-formatter-list electric-formatter-list)
+
+(add-hook 'emacs-lisp-mode-hook
+          (lambda ()
+            (add-to-list 'electric-formatter-list
+                         (electric-formatter-replace-regexp
+                          "\\(\\w\\)(" "\\1 ("));;paren
+            (add-to-list 'electric-formatter-list
+                         (electric-formatter-replace-regexp
+                          ")\\(\\w\\)" ") \\1"));;close paren
+            (add-to-list 'electric-formatter-list
+                         (electric-formatter-replace-regexp
+                          "\\(\\w\\)_\\(\\w\\)" "\\1-\\2"));;underscore
+            ))
+;;comma
+;; for ruby's :hoge,:fuga
 ;; elisp
-(add-to-list 'electric-formatter-list
-             (electric-formatter-replace-regexp "\\(\\w\\)(" "\\1 ("));;paren
-(add-to-list 'electric-formatter-list
-             (electric-formatter-replace-regexp ")\\(\\w\\)" ") \\1"));;close paren
-(add-to-list 'electric-formatter-list
-             (electric-formatter-replace-regexp "\\(\\w\\)_\\(\\w\\)" "\\1-\\2"));;underscore
 ;; (electric-indent-mode)
 
 (define-minor-mode electric-formatter-mode
