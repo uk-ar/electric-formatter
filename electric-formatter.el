@@ -2,6 +2,7 @@
 
 (defvar electric-formatter-list nil)
 (make-variable-buffer-local 'electric-formatter-list)
+(defvar electric-formatter-default-list nil)
 
 (defun electric-formatter (string)
   (reduce (lambda (res func) (funcall func res))
@@ -24,12 +25,12 @@
 (defun electric-formatter-replace-regexp (regexp rep)
   `(lambda (str) (replace-regexp-in-string ,regexp ,rep str) ))
 
-(add-to-list 'electric-formatter-list
+(add-to-list 'electric-formatter-default-list
              (electric-formatter-replace-regexp ",\\(\\w\\|\\s.\\)" ", \\1"))
-;; ruby
+;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" ", \\1" ":foo,:bar")
 
-(setq-default electric-formatter-list electric-formatter-list)
+(setq-default electric-formatter-list electric-formatter-default-list)
 
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
@@ -43,57 +44,103 @@
                          (electric-formatter-replace-regexp
                           "\\(\\w\\)_\\(\\w\\)" "\\1-\\2"));;underscore
             ))
-;;comma
-;; for ruby's :hoge,:fuga
-;; elisp
-;; (electric-indent-mode)
 
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
+  :global t
   :lighter " EF"
   :group 'electric-formatter
   (if electric-formatter-mode
-      (add-hook 'electric-indent-functions #'electric-formatter-electric t t)
-    (remove-hook 'electric-indent-functions #'electric-formatter-electric t)
-    )
-  )
-
-(electric-indent-mode 1)
-;(electric-indent-mode 0)
+      (progn
+        (electric-indent-mode 1)
+        (add-hook 'electric-indent-functions #'electric-formatter-electric t t))
+    (remove-hook 'electric-indent-functions #'electric-formatter-electric t)))
 
 (ert-deftest electric-formatter-comma ()
   (should
    (equal
     (funcall (electric-formatter-replace-regexp ",\\(\\w\\)" ", \\1") ",hoge")
-    ", hoge"))
-  (should
-   (equal
-    (electric-formatter ",hoge")
     ", hoge")))
 
 (ert-deftest electric-formatter-paren ()
   (should
    (equal
     (funcall (electric-formatter-replace-regexp "\\(\\w\\)(" "\\1 (") "hoge(")
-    "hoge ("))
-  (should
-   (equal
-    (electric-formatter "hoge(")
     "hoge (")))
 
 (ert-deftest electric-formatter-close-paren ()
   (should
    (equal
     (funcall (electric-formatter-replace-regexp ")\\(\\w\\)" ") \\1") ")hoge")
-    ") hoge"))
-  (should
-   (equal
-    (electric-formatter ")hoge")
     ") hoge")))
-;; (ert-deftest electric-formatter ()
-;;   (should
-;;    (equal
-;;     (execute-kbd-macro ")hoge")
-;;     ") hoge"))
-;;   )
+
+(defmacro electric-formatter-test-common (&rest body)
+  (declare (debug t))
+  `(with-temp-buffer
+  ;; `(with-current-buffer (get-buffer-create "hoge")
+     (switch-to-buffer (current-buffer))
+     (fundamental-mode)
+     (erase-buffer)
+     ;; (should-not electric-indent-mode)
+     ;; (should-not electric-formatter-mode)
+     (unwind-protect
+         ,@body
+       ;; (electric-indent-mode -1)
+       ;; (electric-formatter-mode -1)
+       ;; chomp
+       (replace-regexp-in-string "[ \t\n]*$" ""
+                                 (substring-no-properties (buffer-string)))
+       )))
+
+(defun electric-formatter-test-execute (string)
+  (insert string)
+  (execute-kbd-macro (kbd "RET"))
+  (replace-regexp-in-string "[ \t\n]*$" ""
+                            (substring-no-properties (buffer-string)))
+  )
+
+(ert-deftest electric-formatter-in-default ()
+  (electric-formatter-test-common
+
+   (electric-formatter-mode 1)
+
+   (should electric-formatter-mode)
+   (should (eq (length electric-indent-functions) 2))
+   (should (eq (length electric-formatter-list) 1))
+
+   (should (equal (electric-formatter ",hoge") ", hoge"))
+   (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
+   )
+  (electric-formatter-test-common
+
+   (electric-formatter-mode 1)
+
+   (should (equal (electric-formatter ")hoge") ")hoge"))
+   (should (equal (electric-formatter-test-execute ")hoge") ")hoge"))
+   )
+  )
+
+(ert-deftest electric-formatter-in-elisp ()
+  (electric-formatter-test-common
+
+   (emacs-lisp-mode)
+   (electric-formatter-mode 1)
+
+   (should electric-formatter-mode)
+   (should (eq (length electric-indent-functions) 2))
+   (should (eq (length electric-formatter-list) 4))
+
+   (should (equal (electric-formatter ",hoge") ", hoge"))
+   (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
+   )
+  (electric-formatter-test-common
+
+   (emacs-lisp-mode)
+   (electric-formatter-mode 1)
+   (should (equal (electric-formatter ")hoge") ") hoge"))
+   (should (equal (electric-formatter "hoge(") "hoge ("))
+   (should (equal (electric-formatter-test-execute ")hoge") ") hoge"))
+   )
+  )
+
 (provide 'electric-formatter)
