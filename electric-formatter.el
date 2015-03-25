@@ -22,7 +22,15 @@
 (defun electric-formatter-electric ()
   (electric-formatter-electric-1 (line-beginning-position) (point))
   )
-;;'(ba, b, c, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f == f == def == g = aba, be, f == a, a, e === b = f)
+
+(defun electric-formatter-electric-region (&optional beg end)
+  ;;
+  (interactive "r")
+  (save-excursion
+    (electric-formatter-electric-1 beg end)
+    ))
+
+;;'(ba, bc, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f == f == def == g = aba, be, f == a, a, e === b = f)
 
 (add-to-list 'electric-formatter-default-list
              '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
