@@ -8,9 +8,8 @@
   (reduce (lambda (res func) (funcall func res))
           (cons string electric-formatter-list)))
 
-(defun electric-formatter-electric ()
-  (when (memq last-command-event '(?, ?=))
-    (let* (
+(defun electric-formatter-electric-1 ()
+(let* (
            (start (line-beginning-position))
            (end (point))
            (str (buffer-substring-no-properties start end))
@@ -19,8 +18,12 @@
         (delete-region start end)
         (insert to-str))
       ))
+(defun electric-formatter-electric ()
+  (when (memq last-command-event '(?, ?=))
+    (electric-formatter-electric-1)
+    )
   )
-;;'(b, a, b, c, d, e, g, a, b, e, f, g, f, a==b=d=e=g)
+;;'(ba,b,c, d, e, g, a, b, e, f, g, f, a==b=d=e=g=)
 
 ;; replace-regexp is better?
 (defun electric-formatter-replace-regexp (regexp rep)

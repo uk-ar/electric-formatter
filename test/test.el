@@ -36,7 +36,8 @@
 
 (defun electric-formatter-test-execute (string)
   (insert string)
-  (execute-kbd-macro (kbd "RET"))
+  ;;(execute-kbd-macro (kbd "RET"))
+  (electric-formatter-electric)
   (replace-regexp-in-string "[ \t\n]*$" ""
                             (substring-no-properties (buffer-string)))
   )
@@ -47,8 +48,7 @@
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   (should (eq (length electric-indent-functions) 2))
-   (should (eq (length electric-formatter-list) 1))
+   (should (eq (length electric-formatter-list) 2))
 
    (should (equal (electric-formatter ",hoge") ", hoge"))
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
@@ -69,8 +69,7 @@
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   (should (eq (length electric-indent-functions) 2))
-   (should (eq (length electric-formatter-list) 4))
+   (should (eq (length electric-formatter-list) 5))
 
    (should (equal (electric-formatter ",hoge") ", hoge"))
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
