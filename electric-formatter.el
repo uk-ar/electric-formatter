@@ -9,23 +9,18 @@
           (cons string electric-formatter-list)))
 
 (defun electric-formatter-electric ()
-  (let ((pos (point)));;save-excursion cannot use becase of using insert
-    (when (eq 10 last-command-event);;new line
-      (forward-line -1))
-    (when (memq last-command-event '(10 ?,))
-      (let* (
-             (start (line-beginning-position))
-             (end (line-end-position))
-             (str (buffer-substring-no-properties start end))
-             (to-str (electric-formatter str)))
-        (unless (equal str to-str)
-          (delete-region start end)
-          (insert to-str))
-        ))
-    (goto-char (+ 1 pos))
-    )
+  (when (memq last-command-event '(?, ?=))
+    (let* (
+           (start (line-beginning-position))
+           (end (point))
+           (str (buffer-substring-no-properties start end))
+           (to-str (electric-formatter str)))
+      (unless (equal str to-str)
+        (delete-region start end)
+        (insert to-str))
+      ))
   )
-;;'(b, a)
+;;'(b, a, b, c, d, e, g, a, b, e, f, g, f, a==b=d=e=g)
 
 ;; replace-regexp is better?
 (defun electric-formatter-replace-regexp (regexp rep)
@@ -33,6 +28,9 @@
 
 (add-to-list 'electric-formatter-default-list
              (electric-formatter-replace-regexp ",\\(\\w\\|\\s.\\)" ", \\1");;space after ","
+             )
+(add-to-list 'electric-formatter-default-list
+             (electric-formatter-replace-regexp "\\(\\w\\|\\s.\\)=" "\\1 =");;space before "="
              )
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" ", \\1" ":foo,:bar")
