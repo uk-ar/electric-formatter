@@ -37,7 +37,7 @@
 (defun electric-formatter-test-execute (string)
   (insert string)
   ;;(execute-kbd-macro (kbd "RET"))
-  (electric-formatter-electric)
+  (electric-formatter-electric-1)
   (replace-regexp-in-string "[ \t\n]*$" ""
                             (substring-no-properties (buffer-string)))
   )
