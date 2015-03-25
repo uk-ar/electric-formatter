@@ -4,35 +4,34 @@
 (make-variable-buffer-local 'electric-formatter-list)
 (defvar electric-formatter-default-list nil)
 
-;; replace-regexp is better?
-(defun electric-formatter-replace-regexp (regexp rep)
-  `(lambda (str) (replace-regexp-in-string ,regexp ,rep str) ))
-
 (defun electric-formatter (string)
-  (reduce (lambda (res rule) (replace-regexp-in-string (car rule) (cdr rule) res))
+  (reduce #'electric-formatter-1
           (cons string electric-formatter-list)))
 
-(defun electric-formatter-electric-1 ()
-  (let* ((start (line-beginning-position))
-         (end (point))
-         (str (buffer-substring-no-properties start end))
+(defun electric-formatter-1 (string rule)
+  (replace-regexp-in-string (car rule) (cdr rule) string))
+
+(defun electric-formatter-electric-1 (start end)
+  (let* ((str (buffer-substring-no-properties start end))
          (to-str (electric-formatter str)))
     (unless (equal str to-str)
       (delete-region start end)
       (insert to-str))
     ))
+
 (defun electric-formatter-electric ()
-  (when (memq last-command-event '(?, ?=))
-    (electric-formatter-electric-1)
-    )
+  (electric-formatter-electric-1 (line-beginning-position) (point))
   )
-;;'(ba,b,c, d, e, g, a, b, e, f, g, f, a==b=d=e=g=)
+;;'(ba, b, c, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f == f == def == g = aba, be, f == a, a, e === b = f)
 
 (add-to-list 'electric-formatter-default-list
-             '(",\\(\\w\\|\\s.\\)" . ", \\1");;space after ","
+             '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
              )
 (add-to-list 'electric-formatter-default-list
-             '("\\(\\w\\|\\s.\\)=" . "\\1 =");;space before "="
+             '("\\(\\w\\)=" . "\\1 =");;space before "="
+             )
+(add-to-list 'electric-formatter-default-list
+             '("=\\(\\w\\)" . "= \\1");;space after "="
              )
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
