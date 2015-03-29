@@ -4,6 +4,46 @@
 (make-variable-buffer-local 'electric-formatter-list)
 
 (defun electric-formatter (string)
+  (cons
+   (concat
+    (regexp-opt
+     (delq
+      nil
+      (mapcar
+       '(lambda (elem)
+          (when (eq (car elem) 'after)
+            (cdr elem)))
+       electric-formatter-list)) t)
+    "\\(\\w\\|\\s.\\)")
+   "\\1 \\2")
+  (cons
+   (concat
+    "\\(\\w\\|\\s.\\)"
+    (regexp-opt
+     (delq
+      nil
+      (mapcar
+       '(lambda (elem)
+          (when (eq (car elem) 'before)
+            (cdr elem)))
+       electric-formatter-list)) t))
+   "\\1 \\2")
+  (let ((after
+         )
+        (before
+         )
+        (other
+         (remove-if-not
+          '(lambda (elem)
+             (stringp (car elem))
+             ) electric-formatter-list))
+        )
+    )
+
+
+
+
+
 
   (reduce #'electric-formatter-1
           (cons string electric-formatter-list)))
