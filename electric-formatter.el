@@ -2,9 +2,9 @@
 
 (defvar electric-formatter-list nil)
 (make-variable-buffer-local 'electric-formatter-list)
-(defvar electric-formatter-default-list nil)
 
 (defun electric-formatter (string)
+
   (reduce #'electric-formatter-1
           (cons string electric-formatter-list)))
 
@@ -26,25 +26,50 @@
 (defun electric-formatter-electric-region (&optional beg end)
   ;;
   (interactive "r")
-  (save-excursion
+  (let ((pos (point)))
     (electric-formatter-electric-1 beg end)
+    (if (= beg pos)
+        (goto-char beg))
     ))
 
-;;'(ba, bc, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f == f == def == g = aba, be, f == a, a, e === b = f)
+;;'(ba, bc, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f== f== def== g = aba, be, f == a, a, e === b = f)
+;;TODO:remove
+;; (defconst ef/space-after-\, '(",\\(\\w\\|\\s.\\)" . ", \\1"))
+;; (defconst ef/space-after-\= '("\\(\\w\\)=" . "\\1 ="))
+;; (defconst ef/space-before-\= '("=\\(\\w\\)" . "= \\1"))
+(setq electric-formatter-list nil)
 
-(add-to-list 'electric-formatter-default-list
-             '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
+(add-to-list 'electric-formatter-list
+             '(after . "=")
              )
-(add-to-list 'electric-formatter-default-list
-             '("\\(\\w\\)=" . "\\1 =");;space before "="
+(add-to-list 'electric-formatter-list
+             '(after . ",")
              )
-(add-to-list 'electric-formatter-default-list
-             '("=\\(\\w\\)" . "= \\1");;space after "="
+(add-to-list 'electric-formatter-list
+             '(before . "=")
              )
+;;(mapcar 'car electric-formatter-list)
+(remove-if-not
+ '(lambda (elem) (eq (car elem) 'after))
+ electric-formatter-list)
+
+(add-to-list 'electric-formatter-list
+             `(,(concat (regexp-opt '("," "=") t) "\\(\\w\\|\\s.\\)") . "\\1 \\2")
+             )
+;;"\\(,\\|=\\)\\(\\w\\|\\s.\\)"
+;; (add-to-list 'electric-formatter-default-list
+;;              '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
+;;              )
+;; (add-to-list 'electric-formatter-default-list
+;;              '("\\(\\w\\)=" . "\\1 =");;space before "="
+;;              )
+;; (add-to-list 'electric-formatter-default-list
+;;              '("=\\(\\w\\)" . "= \\1");;space after "="
+;;              )
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
 
-(setq-default electric-formatter-list electric-formatter-default-list)
+;;(setq-default electric-formatter-list electric-formatter-default-list)
 
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
