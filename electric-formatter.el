@@ -1,52 +1,45 @@
 (require 'cl)
 
 (defvar electric-formatter-list nil)
-(make-variable-buffer-local 'electric-formatter-list)
+;;(make-variable-buffer-local 'electric-formatter-list)
+
+(defun electric-formatter-regex (formatter-list symbol)
+  (let ((strings
+         (delq
+          nil
+          (mapcar
+           '(lambda (elem)
+              (when (eq (car elem) symbol)
+                (cdr elem)))
+           formatter-list))))
+    (if strings
+        (regexp-opt strings t))))
+
+(defun electric-formatter-regex-opt (formatter-list)
+  (delq nil
+  (append
+   (remove-if-not
+    '(lambda (elem)
+       (stringp (car elem))
+       ) formatter-list)
+   (let ((space-after (electric-formatter-regex formatter-list 'space-after))
+         (space-before (electric-formatter-regex formatter-list 'space-before)))
+     (list
+      (if space-after
+          (cons
+           (concat space-after "\\(\\w\\|\\s.\\)")
+           "\\1 \\2"))
+      (if space-before
+          (cons
+           (concat "\\(\\w\\|\\s.\\)" space-before)
+           "\\1 \\2"))
+     )))))
 
 (defun electric-formatter (string)
-  (cons
-   (concat
-    (regexp-opt
-     (delq
-      nil
-      (mapcar
-       '(lambda (elem)
-          (when (eq (car elem) 'after)
-            (cdr elem)))
-       electric-formatter-list)) t)
-    "\\(\\w\\|\\s.\\)")
-   "\\1 \\2")
-  (cons
-   (concat
-    "\\(\\w\\|\\s.\\)"
-    (regexp-opt
-     (delq
-      nil
-      (mapcar
-       '(lambda (elem)
-          (when (eq (car elem) 'before)
-            (cdr elem)))
-       electric-formatter-list)) t))
-   "\\1 \\2")
-  (let ((after
-         )
-        (before
-         )
-        (other
-         (remove-if-not
-          '(lambda (elem)
-             (stringp (car elem))
-             ) electric-formatter-list))
-        )
-    )
-
-
-
-
-
-
   (reduce #'electric-formatter-1
-          (cons string electric-formatter-list)))
+          (cons
+           string
+           (electric-formatter-regex-opt electric-formatter-list))))
 
 (defun electric-formatter-1 (string rule)
   (replace-regexp-in-string (car rule) (cdr rule) string))
@@ -80,22 +73,15 @@
 (setq electric-formatter-list nil)
 
 (add-to-list 'electric-formatter-list
-             '(after . "=")
+             '(space-after . "=")
              )
 (add-to-list 'electric-formatter-list
-             '(after . ",")
+             '(space-after . ",")
              )
 (add-to-list 'electric-formatter-list
-             '(before . "=")
+             '(space-before . "=")
              )
-;;(mapcar 'car electric-formatter-list)
-(remove-if-not
- '(lambda (elem) (eq (car elem) 'after))
- electric-formatter-list)
 
-(add-to-list 'electric-formatter-list
-             `(,(concat (regexp-opt '("," "=") t) "\\(\\w\\|\\s.\\)") . "\\1 \\2")
-             )
 ;;"\\(,\\|=\\)\\(\\w\\|\\s.\\)"
 ;; (add-to-list 'electric-formatter-default-list
 ;;              '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
@@ -113,12 +99,21 @@
 
 (add-hook 'emacs-lisp-mode-hook
           (lambda ()
+            ;; (add-to-list 'electric-formatter-list
+            ;;              '("\\(\\w\\)(" . "\\1 ("));;paren
+            ;; (add-to-list 'electric-formatter-list
+            ;;              '(")\\(\\w\\)" . ") \\1"));;close paren
+            ;; (add-to-list 'electric-formatter-list
+            ;;              '("\\(\\w\\)_\\(\\w\\)" . "\\1-\\2"));;underscore
             (add-to-list 'electric-formatter-list
-                         '("\\(\\w\\)(" . "\\1 ("));;paren
+                         '(space-after . "=")
+                         )
             (add-to-list 'electric-formatter-list
-                         '(")\\(\\w\\)" . ") \\1"));;close paren
+                         '(space-after . ",")
+                         )
             (add-to-list 'electric-formatter-list
-                         '("\\(\\w\\)_\\(\\w\\)" . "\\1-\\2"));;underscore
+                         '(space-before . "=")
+                         )
             ))
 
 (define-minor-mode electric-formatter-mode

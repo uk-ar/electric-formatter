@@ -4,6 +4,63 @@
     (electric-formatter-1 ",hoge" '(",\\(\\w\\)" . ", \\1"))
     ", hoge")))
 
+(ert-deftest electric-formatter-regex-space-after ()
+  (should
+   (equal
+    (electric-formatter-regex
+     '((space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ("foo" . "bar"))
+     'space-after)
+    "\\([,=]\\)"
+    )))
+
+(ert-deftest electric-formatter-regex-space-after-not-exist ()
+  (should
+   (equal
+    (electric-formatter-regex
+     '((space-before . "=")
+       ("foo" . "bar"))
+     'space-after)
+    nil
+    )))
+
+(ert-deftest electric-formatter-regex-space-before ()
+  (should
+   (equal
+    (electric-formatter-regex
+     '((space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ("foo" . "bar"))
+     'space-before)
+    "\\(=\\)"
+    )))
+
+(ert-deftest electric-formatter-regex-opt ()
+  (should
+   (equal
+    (electric-formatter-regex-opt
+     '((space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ("foo" . "bar")))
+    '(("foo" . "bar")
+      ("\\([,=]\\)\\(\\w\\|\\s.\\)" . "\\1 \\2")
+      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2"))
+    )))
+
+(ert-deftest electric-formatter-regex-opt-after-not-exist ()
+  (should
+   (equal
+    (electric-formatter-regex-opt
+     '((space-before . "=")
+       ("foo" . "bar")))
+    '(("foo" . "bar")
+      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2"))
+    )))
+
 (ert-deftest electric-formatter-paren ()
   (should
    (equal
