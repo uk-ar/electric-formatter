@@ -42,23 +42,24 @@
   (should
    (equal
     (electric-formatter-regex-opt
-     '((space-after . "=")
+     '(("foo" . "bar")
+       (space-after . "=")
        (space-after . ",")
        (space-before . "=")
-       ("foo" . "bar")))
-    '(("foo" . "bar")
-      ("\\([,=]\\)\\(\\w\\|\\s.\\)" . "\\1 \\2")
-      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2"))
+       ))
+    '(("\\([,=]\\)\\(\\w\\|\\s.\\)" . "\\1 \\2")
+      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2")
+      ("foo" . "bar"))
     )))
 
 (ert-deftest electric-formatter-regex-opt-after-not-exist ()
   (should
    (equal
     (electric-formatter-regex-opt
-     '((space-before . "=")
-       ("foo" . "bar")))
-    '(("foo" . "bar")
-      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2"))
+     '(("foo" . "bar")
+       (space-before . "=")))
+    '(("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2")
+      ("foo" . "bar"))
     )))
 
 (ert-deftest electric-formatter-paren ()
@@ -117,7 +118,7 @@
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   ;;(should (eq (length electric-formatter-list) 3))
+   (should (eq (length electric-formatter-list) 3))
 
    (should (equal (electric-formatter ",hoge") ", hoge"))
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
@@ -150,5 +151,6 @@
    (should (equal (electric-formatter ")hoge") ") hoge"))
    (should (equal (electric-formatter "hoge(") "hoge ("))
    (should (equal (electric-formatter-test-execute ")hoge") ") hoge"))
-   )
-  )
+   ))
+
+(ert-run-tests-interactively t)

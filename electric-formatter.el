@@ -5,35 +5,34 @@
 
 (defun electric-formatter-regex (formatter-list symbol)
   (let ((strings
-         (delq
-          nil
-          (mapcar
-           '(lambda (elem)
-              (when (eq (car elem) symbol)
-                (cdr elem)))
-           formatter-list))))
+         (mapcar 'cdr
+                 (remove-if-not
+                  (lambda (elem) (eq (car elem) symbol))
+                  formatter-list))))
     (if strings
         (regexp-opt strings t))))
 
 (defun electric-formatter-regex-opt (formatter-list)
-  (delq nil
-  (append
-   (remove-if-not
-    '(lambda (elem)
-       (stringp (car elem))
-       ) formatter-list)
-   (let ((space-after (electric-formatter-regex formatter-list 'space-after))
-         (space-before (electric-formatter-regex formatter-list 'space-before)))
-     (list
-      (if space-after
-          (cons
-           (concat space-after "\\(\\w\\|\\s.\\)")
-           "\\1 \\2"))
-      (if space-before
-          (cons
-           (concat "\\(\\w\\|\\s.\\)" space-before)
-           "\\1 \\2"))
-     )))))
+  (delq
+   nil
+   (append
+    (let ((space-after
+           (electric-formatter-regex formatter-list 'space-after))
+          (space-before
+           (electric-formatter-regex formatter-list 'space-before)))
+      (list
+       (if space-after
+           (cons
+            (concat space-after "\\(\\w\\|\\s.\\)")
+            "\\1 \\2"))
+       (if space-before
+           (cons
+            (concat "\\(\\w\\|\\s.\\)" space-before)
+            "\\1 \\2"))))
+    (remove-if-not
+     '(lambda (elem)
+        (stringp (car elem)))
+     formatter-list))))
 
 (defun electric-formatter (string)
   (reduce #'electric-formatter-1
@@ -49,12 +48,10 @@
          (to-str (electric-formatter str)))
     (unless (equal str to-str)
       (delete-region start end)
-      (insert to-str))
-    ))
+      (insert to-str))))
 
 (defun electric-formatter-electric ()
-  (electric-formatter-electric-1 (line-beginning-position) (point))
-  )
+  (electric-formatter-electric-1 (line-beginning-position) (point)))
 
 (defun electric-formatter-electric-region (&optional beg end)
   ;;
@@ -62,59 +59,36 @@
   (let ((pos (point)))
     (electric-formatter-electric-1 beg end)
     (if (= beg pos)
-        (goto-char beg))
-    ))
+        (goto-char beg))))
 
 ;;'(ba, bc, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f== f== def== g = aba, be, f == a, a, e === b = f)
 ;;TODO:remove
-;; (defconst ef/space-after-\, '(",\\(\\w\\|\\s.\\)" . ", \\1"))
-;; (defconst ef/space-after-\= '("\\(\\w\\)=" . "\\1 ="))
-;; (defconst ef/space-before-\= '("=\\(\\w\\)" . "= \\1"))
 (setq electric-formatter-list nil)
 
-(add-to-list 'electric-formatter-list
-             '(space-after . "=")
-             )
-(add-to-list 'electric-formatter-list
-             '(space-after . ",")
-             )
-(add-to-list 'electric-formatter-list
-             '(space-before . "=")
-             )
+;;nconc?
+(setq electric-formatter-list
+ (append electric-formatter-list
+        '((space-after . "=")
+          (space-after . ",")
+          (space-before . "="))))
 
-;;"\\(,\\|=\\)\\(\\w\\|\\s.\\)"
-;; (add-to-list 'electric-formatter-default-list
-;;              '(",\\(\\w\\)" . ", \\1");;space after "," ??",\\(\\w\\|\\s.\\)"
-;;              )
-;; (add-to-list 'electric-formatter-default-list
-;;              '("\\(\\w\\)=" . "\\1 =");;space before "="
-;;              )
-;; (add-to-list 'electric-formatter-default-list
-;;              '("=\\(\\w\\)" . "= \\1");;space after "="
-;;              )
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
 
 ;;(setq-default electric-formatter-list electric-formatter-default-list)
 
+(defun electric-formatter-emacs-lisp-mode-setup()
+  (setq electric-formatter-list
+        ;;(append electric-formatter-list
+        '((space-after . "=")
+          (space-after . ",")
+          (space-after . ")")
+          (space-before . "=")
+          (space-before . "(")
+          )))
+
 (add-hook 'emacs-lisp-mode-hook
-          (lambda ()
-            ;; (add-to-list 'electric-formatter-list
-            ;;              '("\\(\\w\\)(" . "\\1 ("));;paren
-            ;; (add-to-list 'electric-formatter-list
-            ;;              '(")\\(\\w\\)" . ") \\1"));;close paren
-            ;; (add-to-list 'electric-formatter-list
-            ;;              '("\\(\\w\\)_\\(\\w\\)" . "\\1-\\2"));;underscore
-            (add-to-list 'electric-formatter-list
-                         '(space-after . "=")
-                         )
-            (add-to-list 'electric-formatter-list
-                         '(space-after . ",")
-                         )
-            (add-to-list 'electric-formatter-list
-                         '(space-before . "=")
-                         )
-            ))
+          'electric-formatter-emacs-lisp-mode-setup)
 
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
