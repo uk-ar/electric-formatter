@@ -50,7 +50,35 @@
       (delete-region start end)
       (insert to-str))))
 
+(defun foo()
+  (let ((end (point-at-eol))
+        (points '())
+        (result '()))
+    (while (< (point) end)
+      (buffer-substring
+       (- (point)
+          (cond
+           ((nth 3 (syntax-ppss))
+            (skip-syntax-forward "^\""))
+           ((nth 4 (syntax-ppss))
+            (skip-syntax-forward "^>"))
+           (t
+            (skip-syntax-forward "^\"<")))
+          (forward-char)
+          )))))
+
+;; (setq
+;;  result
+;;  (append
+;;   result
+;;   (buffer-substring
+;;    (- (point)
+;;       )
+;;    (point))))
+
 (defun electric-formatter-electric ()
+  ;;(when (nth 4 (syntax-ppss)))
+  (undo-boundary)
   (electric-formatter-electric-1 (line-beginning-position) (point)))
 
 (defun electric-formatter-electric-region (&optional beg end)
@@ -67,16 +95,30 @@
 
 ;;nconc?
 (setq electric-formatter-list
- (append electric-formatter-list
-        '((space-after . "=")
-          (space-after . ",")
-          (space-before . "="))))
+      '((space-after . "=")
+        (space-after . ",")
+        (space-before . "=")))
+
+;;(assoc-default 'space-after electric-formatter-list)
 
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
 
 ;;(setq-default electric-formatter-list electric-formatter-default-list)
 
+(define-minor-mode electric-formatter-mode
+  "Toggle electric formatter."
+  :global t
+  :lighter " EF"
+  :group 'electric-formatter
+  (if electric-formatter-mode
+      (progn
+        (add-hook 'post-self-insert-hook #'electric-formatter-electric)
+        )
+    (remove-hook 'post-self-insert-hook #'electric-formatter-electric)))
+;;post-self-insert-hook
+
+;;; Setting
 (defun electric-formatter-emacs-lisp-mode-setup()
   (setq electric-formatter-list
         ;;(append electric-formatter-list
@@ -89,16 +131,5 @@
 
 (add-hook 'emacs-lisp-mode-hook
           'electric-formatter-emacs-lisp-mode-setup)
-
-(define-minor-mode electric-formatter-mode
-  "Toggle electric formatter."
-  :global t
-  :lighter " EF"
-  :group 'electric-formatter
-  (if electric-formatter-mode
-      (progn
-        (add-hook 'post-self-insert-hook #'electric-formatter-electric t t)
-        )
-    (remove-hook 'post-self-insert-hook #'electric-formatter-electric t)))
 
 (provide 'electric-formatter)
