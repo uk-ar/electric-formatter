@@ -192,6 +192,16 @@
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n;,hoge"))
    (should (equal (point) (+ (length ", hoge") 1)))
    (erase-buffer)
+
+   ;; (insert "1,2")
+   ;; (goto-char (point-min))
+   ;; ;;(set-mark-command 1)
+   ;; (goto-char (end-of-line))
+   ;; (electric-formatter-region (point-min) (point-max))
+   ;; ;; (should (equal (substring-no-properties (buffer-string))
+   ;; ;;                "1, 2"))
+   ;; (should (equal (point) (+ (length ", hoge") 1)))
+   ;; (erase-buffer)
    ))
 
 (ert-run-tests-interactively t)
