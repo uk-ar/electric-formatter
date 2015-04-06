@@ -108,10 +108,7 @@
   (insert string)
   ;;(execute-kbd-macro (kbd "RET"))
   (electric-formatter-electric)
-  (prog1
-      (replace-regexp-in-string "[ \t\n]*$" ""
-                                (substring-no-properties (buffer-string)))
-    (erase-buffer)))
+  (substring-no-properties (buffer-string)))
 
 (ert-deftest electric-formatter-in-default ()
   (electric-formatter-test-common
@@ -119,17 +116,17 @@
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   ;;(should (eq (length electric-formatter-list) 3))
+   (should (eq 3 (length electric-formatter-list)))
 
    (should (equal (electric-formatter ",hoge") ", hoge"))
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
-   )
-  (electric-formatter-test-common
-
-   (electric-formatter-mode 1)
+   (should (equal (point) (+ (length ", hoge") 1)))
+   (erase-buffer)
 
    (should (equal (electric-formatter ")hoge") ")hoge"))
    (should (equal (electric-formatter-test-execute ")hoge") ")hoge"))
+   (should (equal (point) (+ (length ")hoge") 1)))
+   (erase-buffer)
    )
   )
 
@@ -142,18 +139,59 @@
    (should electric-formatter-mode)
    ;;(should (eq (length electric-formatter-list) 6))
 
+   ;;end of buffer
+   (should (equal (electric-formatter-test-execute "a") "a"))
+   (should (equal (point) (+ (point-min) 1)))
+   (erase-buffer)
+
    (should (equal (electric-formatter ",hoge") ", hoge"))
    (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
-   )
-  (electric-formatter-test-common
+   (should (equal (point) (+ (length ", hoge") 1)))
+   (erase-buffer)
 
-   (emacs-lisp-mode)
-   (electric-formatter-mode 1)
-   (electric-pair-mode 1)
+   ;;(electric-pair-mode 1)
    (should (equal (electric-formatter ")hoge") ") hoge"))
-   (should (equal (electric-formatter "hoge(") "hoge ("))
    (should (equal (electric-formatter-test-execute ")hoge") ") hoge"))
-   (should (equal (electric-formatter-test-execute "hoge(") "hoge ()"))
+   (should (equal (point) (+ (length ") hoge") 1)))
+   (erase-buffer)
+
+   ;; (should (equal (electric-formatter "hoge(") "hoge ("))
+   ;; (should (equal (electric-formatter-test-execute "hoge(") "hoge ("))
+   ;; (should (equal (point) 7))
+   ;; (erase-buffer)
+
+   (insert ",hoge\n")
+   (should (equal (electric-formatter-test-execute ",hoge") ",hoge\n, hoge"))
+   (should (equal (point) (+ (length ",hoge\n, hoge") 1)))
+   (erase-buffer)
+
+   (insert "\n,hoge")
+   (goto-char (point-min))
+   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n,hoge"))
+   (should (equal (point) (+ (length ", hoge") 1)))
+   (erase-buffer)
+
+   (should (equal (electric-formatter-test-execute ",hoge \",hoge")
+                  ", hoge \",hoge"))
+   (should (equal (point) (+ (length ", hoge \",hoge") 1)))
+   (erase-buffer)
+
+   (insert "\n\",hoge")
+   (goto-char (point-min))
+   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n\",hoge"))
+   (should (equal (point) (+ (length ", hoge") 1)))
+   (erase-buffer)
+
+   (should (equal (electric-formatter-test-execute ",hoge ;,hoge")
+                  ", hoge ;,hoge"))
+   (should (equal (point) (+ (length ", hoge ;,hoge") 1)))
+   (erase-buffer)
+
+   (insert "\n;,hoge")
+   (goto-char (point-min))
+   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n;,hoge"))
+   (should (equal (point) (+ (length ", hoge") 1)))
+   (erase-buffer)
    ))
 
 (ert-run-tests-interactively t)
