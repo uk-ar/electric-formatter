@@ -1,5 +1,47 @@
-(require 'cl)
+;;; electric-formatter.el --- Realtime Formatter which independent of Programming language.
 
+;;-------------------------------------------------------------------
+;;
+;; Copyright (C) 2015 Yuuki Arisawa
+;;
+;; This file is NOT part of Emacs.
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation; either version 2 of
+;; the License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be
+;; useful, but WITHOUT ANY WARRANTY; without even the implied
+;; warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+;; PURPOSE.  See the GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public
+;; License along with this program; if not, write to the Free
+;; Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+;; MA 02111-1307 USA
+;;
+;;-------------------------------------------------------------------
+
+;; Author: Yuuki Arisawa <yuuki.ari@gmail.com>
+;; URL: https://github.com/uk-ar/electric-formatter
+;; Package-Requires: ((cl-lib "0.5"))
+;; Created: 1 April 2015
+;; Version: 1.0
+;; Keywords: region formatter
+;;; Compatibility: GNU Emacs 24.4
+
+;;; Commentary:
+
+;; Smart region guess what you want to select by one command.
+;; If you call this command multiple times at the same position, it expands selected region (it calls ```er/expand-region```).
+;; Else, if you move from the mark and call this command, it select the region rectangular (it call ```rectangle-mark-mode```).
+;; Else, if you move from the mark and call this command at same column as mark, it add cursor to each line (it call ```mc/edit-lines```).
+
+;; This basic concept is from [sense-region](https://gist.github.com/tnoda/1776988).
+
+(require 'cl-lib)
+;;; Code:
 (defvar electric-formatter-list nil)
 (make-variable-buffer-local 'electric-formatter-list)
 
@@ -43,7 +85,12 @@
 (defun electric-formatter-1 (string rule)
   (replace-regexp-in-string (car rule) (cdr rule) string))
 
-(defun electric-formatter-electric-1 (start end)
+(defun electric-formatter-electric ()
+  (undo-boundary)
+  (electric-formatter-region
+             (line-beginning-position) (point)))
+
+(defun electric-formatter-range (start end)
   ;; must go to after inserted region
   ;; save-execursion cause bug
   (let* ((str (buffer-substring-no-properties start end))
@@ -56,28 +103,9 @@
       ;;(save-excursion)
       )))
 
-;; (setq
-;;  result
-;;  (append
-;;   result
-;;   (buffer-substring
-;;    (- (point)
-;;       )
-;;    (point))))
-
-(defun electric-formatter-electric ()
-  (undo-boundary)
-  (goto-char
-   (or (cdr (electric-formatter-electric-region
-             (line-beginning-position) (point)))
-       (point))))
-
-(defun electric-formatter-electric-region (&optional beg end)
-  (interactive "r")
+(defun electric-formatter-region-1 (beg end)
   (let ((beg (min beg end))
-        (end-marker (set-marker (make-marker) (max beg end)))
-        ;;(end (max beg end))
-        )
+        (end-marker (set-marker (make-marker) (max beg end))))
     ;; parse forward because text inserted
     (goto-char (- beg 1));;-1 for forward-char
     (while (< (point) (marker-position end-marker))
@@ -97,31 +125,26 @@
         ;;until comment end or string end
         (let ((pos (point)))
           (skip-syntax-forward "^\"<" (marker-position end-marker))
-          (electric-formatter-electric-1
-           (- pos 1)
-           (point)
-           ;(if (eobp) (point) (+ (point) 1))
-           ;; (min (+ (point) 1)
-           ;;      ;;-1 for not to delete marker
-           ;;      ;;(- (marker-position end-marker) 1)
-           ;;      (marker-position end-marker)
-           ;;      )
-           )
-          ;; (unless (< (point) (marker-position end-marker))
-          ;;   (goto-char (marker-position end-marker)))
+          (electric-formatter-range (- pos 1) (point))
           ))))
-    (prog1
-        (cons beg
-              ;;(marker-position end-marker)
-              (point)
-              )
-      (set-marker end-marker nil))
-    ))
-;;aa, a bb "ee""c,c" ;;dd
+    (set-marker end-marker nil)
+    (cons beg (point))))
 
-;;'(ba, bc, d, e, g, a, b, e, f, g, f, a == b = d = e = g = d == b =,= a, b, d, e, e,, f== f== def== g = aba, be, f == a, a, e === b = f)
-;;TODO:remove
-(setq electric-formatter-list nil)
+(defun electric-formatter-region (&optional beg end)
+  (interactive "r")
+  (let ((pos (point))
+        (pos-marker (set-marker (make-marker) (point)))
+        (beg (min beg end))
+        (end (max beg end)))
+    (electric-formatter-region-1 beg end)
+    ;;(electric-formatter-electric-1 beg end)
+    (cond
+     ((= beg pos)
+      (goto-char beg))
+     ((= end pos)) ;;nop
+     (t
+      (goto-char (marker-position pos-marker))))
+    (set-marker pos-marker nil)))
 
 ;;nconc?
 (setq-default electric-formatter-list
@@ -133,8 +156,6 @@
 
 ;; for ruby's :hoge,:fuga
 ;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
-
-;;(setq-default electric-formatter-list electric-formatter-default-list)
 
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
@@ -151,7 +172,6 @@
 ;;; Setting
 (defun electric-formatter-emacs-lisp-mode-setup()
   (setq electric-formatter-list
-        ;;(append electric-formatter-list
         '((space-after . "=")
           (space-after . ",")
           (space-after . ")")
