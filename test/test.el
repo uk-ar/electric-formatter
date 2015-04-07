@@ -1,3 +1,5 @@
+(require 'electric-formatter)
+
 (ert-deftest electric-formatter-comma ()
   (should
    (equal
@@ -71,8 +73,8 @@
        (space-after . ",")
        (space-before . "=")
        ))
-    `((,(concat "\\([,=]\\)" electric-formatter-beginnig-regexp). "\\1 \\2")
-      ("\\(\\w\\|\\s.\\|\\s)\\)\\(=\\)" . "\\1 \\2")
+    `((,(concat "\\([,=]\\)" electric-formatter-beginning-regexp) . "\\1 \\2")
+      (,(concat electric-formatter-end-regexp "\\(=\\)") . "\\1 \\2")
       ("foo" . "bar"))
     )))
 
@@ -82,7 +84,7 @@
     (electric-formatter-regexp-opt
      '(("foo" . "bar")
        (space-before . "=")))
-    '(("\\(\\w\\|\\s.\\|\\s)\\)\\(=\\)" . "\\1 \\2")
+    `((,(concat electric-formatter-end-regexp "\\(=\\)") . "\\1 \\2")
       ("foo" . "bar"))
     )))
 
@@ -187,6 +189,16 @@
    (electric-formatter-test-execute "),(" ") ,(")
    (electric-formatter-test-execute ")\"" ") \"")
    (electric-formatter-test-execute "a\"" "a \"")
+
+   (electric-formatter-test-execute "a." "a .")
+   (electric-formatter-test-execute ".a" ". a")
+
+   ;;(electric-formatter-test-execute "\"a\"a" "\"a\" a")
+   ;;(electric-formatter-test-execute "\"a\"a" "\"a\" a" "\n")
+
+   (electric-formatter-test-execute "\"\"a" "\"\" a");;only bobp?
+   ;;(electric-formatter-test-execute "\"\"a" "\"\" a" "\n");;only bobp?
+   ;;(electric-formatter-test-execute "\"\"(" "\"\" (")
    ))
 
 (ert-run-tests-interactively t)

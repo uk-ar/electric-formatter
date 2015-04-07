@@ -54,8 +54,8 @@
     (if strings
         (regexp-opt strings t))))
 
-(defvar electric-formatter-beginnig-regexp "\\(\\w\\|\\s.\\|\\s'\\|s\"\\)")
-(defvar electric-formatter-end-regexp "\\(\\w\\|\\s.\\|\\s)\\)")
+(defvar electric-formatter-beginning-regexp "\\(\\w\\|\\s.\\|\\s'\\|s\"\\)")
+(defvar electric-formatter-end-regexp "\\(\\w\\|\\s.\\|\\s)\\|s\"\\)")
 
 (defun electric-formatter-regexp-opt (formatter-list)
   (delq
@@ -117,21 +117,23 @@
       (cond
        ;; in string
        ((nth 3 (syntax-ppss))
-        ;;until string start
+        ;;until string end
         (skip-syntax-forward "^\"" (marker-position end-marker)))
        ;; in comment
        ((nth 4 (syntax-ppss))
-        ;;until comment start
+        ;;until comment end
         (skip-syntax-forward "^>" (marker-position end-marker)))
        (t
-        ;;until comment end or string end
-        (let ((pos (point)))
+        (let ((pos (point))
+              );(offset (save-excursion (skip-syntax-backward "\">" beg)))
+          ;;until comment or string start
           (skip-syntax-forward "^\"<" (marker-position end-marker))
           (electric-formatter-range
-           (- pos 1)
+           (- pos 1);;-1 for forward-char
            (+ (point)
               (skip-syntax-forward
-               "\"<" (marker-position end-marker))))))))
+               "\"<" (+ 1 (point)))
+           ))))))
     (set-marker end-marker nil)
     (cons beg (point))))
 
@@ -183,9 +185,11 @@
           ;;(space-after . ",") macro escape
           (space-after . ")")
           (space-after . "\"")
+          (space-after . ".")
           (space-before . "=")
           (space-before . "(")
           (space-before . "\"")
+          (space-before . ".")
           )))
 
 (add-hook 'emacs-lisp-mode-hook
