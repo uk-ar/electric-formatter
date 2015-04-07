@@ -185,7 +185,8 @@
    (electric-formatter-test-execute ")`(" ") `(")
 
    (electric-formatter-test-execute "),(" ") ,(")
-   ;;(electric-formatter-test-execute ")\"" ") \"")
+   (electric-formatter-test-execute ")\"" ") \"")
+   (electric-formatter-test-execute "a\"" "a \"")
    ))
 
 (ert-run-tests-interactively t)

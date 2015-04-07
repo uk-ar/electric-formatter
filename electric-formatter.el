@@ -118,19 +118,20 @@
        ;; in string
        ((nth 3 (syntax-ppss))
         ;;until string start
-        (skip-syntax-forward "^\"" (marker-position end-marker))
-        )
+        (skip-syntax-forward "^\"" (marker-position end-marker)))
        ;; in comment
        ((nth 4 (syntax-ppss))
         ;;until comment start
-        (skip-syntax-forward "^>" (marker-position end-marker))
-        )
+        (skip-syntax-forward "^>" (marker-position end-marker)))
        (t
         ;;until comment end or string end
         (let ((pos (point)))
           (skip-syntax-forward "^\"<" (marker-position end-marker))
-          (electric-formatter-range (- pos 1) (point))
-          ))))
+          (electric-formatter-range
+           (- pos 1)
+           (+ (point)
+              (skip-syntax-forward
+               "\"<" (marker-position end-marker))))))))
     (set-marker end-marker nil)
     (cons beg (point))))
 
