@@ -4,64 +4,6 @@
     (electric-formatter-1 ",hoge" '(",\\(\\w\\)" . ", \\1"))
     ", hoge")))
 
-(ert-deftest electric-formatter-regex-space-after ()
-  (should
-   (equal
-    (electric-formatter-regex
-     '((space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ("foo" . "bar"))
-     'space-after)
-    "\\([,=]\\)"
-    )))
-
-(ert-deftest electric-formatter-regex-space-after-not-exist ()
-  (should
-   (equal
-    (electric-formatter-regex
-     '((space-before . "=")
-       ("foo" . "bar"))
-     'space-after)
-    nil
-    )))
-
-(ert-deftest electric-formatter-regex-space-before ()
-  (should
-   (equal
-    (electric-formatter-regex
-     '((space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ("foo" . "bar"))
-     'space-before)
-    "\\(=\\)"
-    )))
-
-(ert-deftest electric-formatter-regex-opt ()
-  (should
-   (equal
-    (electric-formatter-regex-opt
-     '(("foo" . "bar")
-       (space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ))
-    '(("\\([,=]\\)\\(\\w\\|\\s.\\)" . "\\1 \\2")
-      ("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2")
-      ("foo" . "bar"))
-    )))
-
-(ert-deftest electric-formatter-regex-opt-after-not-exist ()
-  (should
-   (equal
-    (electric-formatter-regex-opt
-     '(("foo" . "bar")
-       (space-before . "=")))
-    '(("\\(\\w\\|\\s.\\)\\(=\\)" . "\\1 \\2")
-      ("foo" . "bar"))
-    )))
-
 (ert-deftest electric-formatter-paren ()
   (should
    (equal
@@ -86,6 +28,64 @@
     (electric-formatter-1 "=a" '("=\\(\\w\\)" . "= \\1"))
     "= a")))
 
+(ert-deftest electric-formatter-regexp-space-after ()
+  (should
+   (equal
+    (electric-formatter-regexp
+     '((space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ("foo" . "bar"))
+     'space-after)
+    "\\([,=]\\)"
+    )))
+
+(ert-deftest electric-formatter-regexp-space-after-not-exist ()
+  (should
+   (equal
+    (electric-formatter-regexp
+     '((space-before . "=")
+       ("foo" . "bar"))
+     'space-after)
+    nil
+    )))
+
+(ert-deftest electric-formatter-regexp-space-before ()
+  (should
+   (equal
+    (electric-formatter-regexp
+     '((space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ("foo" . "bar"))
+     'space-before)
+    "\\(=\\)"
+    )))
+
+(ert-deftest electric-formatter-regexp-opt ()
+  (should
+   (equal
+    (electric-formatter-regexp-opt
+     '(("foo" . "bar")
+       (space-after . "=")
+       (space-after . ",")
+       (space-before . "=")
+       ))
+    `((,(concat "\\([,=]\\)" electric-formatter-beginnig-regexp). "\\1 \\2")
+      ("\\(\\w\\|\\s.\\|\\s)\\)\\(=\\)" . "\\1 \\2")
+      ("foo" . "bar"))
+    )))
+
+(ert-deftest electric-formatter-regexp-opt-after-not-exist ()
+  (should
+   (equal
+    (electric-formatter-regexp-opt
+     '(("foo" . "bar")
+       (space-before . "=")))
+    '(("\\(\\w\\|\\s.\\|\\s)\\)\\(=\\)" . "\\1 \\2")
+      ("foo" . "bar"))
+    )))
+
 (defmacro electric-formatter-test-common (&rest body)
   (declare (debug t))
   `(with-temp-buffer
@@ -104,11 +104,29 @@
                                  (substring-no-properties (buffer-string)))
        )))
 
-(defun electric-formatter-test-execute (string)
+(defun electric-formatter-test-execute (string expect &optional pre post)
+  (should (equal (electric-formatter string) expect))
+  (when pre (insert pre))
   (insert string)
+  (when post (save-excursion (insert post)))
   ;;(execute-kbd-macro (kbd "RET"))
   (electric-formatter-electric)
-  (substring-no-properties (buffer-string)))
+  (should (equal (substring-no-properties (buffer-string))
+                 (concat pre expect post)))
+  (should (equal (point) (+ (length (concat pre expect)) 1)))
+  (erase-buffer)
+  )
+
+(defmacro electric-formatter-test-region (string expect point)
+  (declare (debug t))
+  `(progn
+     (insert ,string)
+     (goto-char , point)
+     (electric-formatter-region (+ (point-min) 1) (- (point-max) 1))
+     (should (equal (substring-no-properties (buffer-string))
+                    ,expect))
+     (should (equal (point) , point))
+     (erase-buffer)))
 
 (ert-deftest electric-formatter-in-default ()
   (electric-formatter-test-common
@@ -118,15 +136,35 @@
    (should electric-formatter-mode)
    (should (eq 3 (length electric-formatter-list)))
 
-   (should (equal (electric-formatter ",hoge") ", hoge"))
-   (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
-   (should (equal (point) (+ (length ", hoge") 1)))
-   (erase-buffer)
+   (electric-formatter-test-execute ",hoge" ", hoge")
+   (electric-formatter-test-execute ")hoge" ")hoge")
 
-   (should (equal (electric-formatter ")hoge") ")hoge"))
-   (should (equal (electric-formatter-test-execute ")hoge") ")hoge"))
-   (should (equal (point) (+ (length ")hoge") 1)))
-   (erase-buffer)
+      (electric-formatter-test-execute ",hoge" ", hoge" nil "\n,hoge")
+   (electric-formatter-test-execute ",hoge" ", hoge" ",hoge\n" nil)
+
+   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n\",hoge\"")
+   (electric-formatter-test-execute ",hoge" ", hoge" nil "\",hoge\"")
+   (electric-formatter-test-execute ",hoge" ", hoge" "\",hoge\"\n" nil)
+   (electric-formatter-test-execute ",hoge" ", hoge" "\",hoge\"" nil)
+   (electric-formatter-test-execute ",hoge" ", hoge"
+                                    "\",hoge\"\n" "\",hoge\"\n")
+
+   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n;,hoge")
+   (electric-formatter-test-execute ",hoge" ", hoge" nil ";,hoge")
+   (electric-formatter-test-execute ",hoge" ", hoge" ";,hoge\n" nil)
+   (electric-formatter-test-execute ",hoge" ", hoge" ";,hoge\n" ";,hoge")
+   ;;(electric-formatter-test-execute ",hoge" ", hoge" ";,hoge" nil)
+
+   ;;end of region
+   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (- (point-max) 1))
+   ;;beginnig of region
+   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (+ (point-min) 1))
+   ;;above region
+   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (point-min))
+   ;;below region
+   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (point-max))
+   ;;inside region
+   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (+ (point-min) 2))
    )
   )
 
@@ -138,70 +176,16 @@
 
    (should electric-formatter-mode)
    ;;(should (eq (length electric-formatter-list) 6))
-
-   ;;end of buffer
-   (should (equal (electric-formatter-test-execute "a") "a"))
-   (should (equal (point) (+ (point-min) 1)))
-   (erase-buffer)
-
-   (should (equal (electric-formatter ",hoge") ", hoge"))
-   (should (equal (electric-formatter-test-execute ",hoge") ", hoge"))
-   (should (equal (point) (+ (length ", hoge") 1)))
-   (erase-buffer)
-
+   (electric-formatter-test-execute "a" "a")
    ;;(electric-pair-mode 1)
-   (should (equal (electric-formatter ")hoge") ") hoge"))
-   (should (equal (electric-formatter-test-execute ")hoge") ") hoge"))
-   (should (equal (point) (+ (length ") hoge") 1)))
-   (erase-buffer)
+   (electric-formatter-test-execute ")hoge" ") hoge")
+   (electric-formatter-test-execute "hoge(" "hoge (")
 
-   ;; (should (equal (electric-formatter "hoge(") "hoge ("))
-   ;; (should (equal (electric-formatter-test-execute "hoge(") "hoge ("))
-   ;; (should (equal (point) 7))
-   ;; (erase-buffer)
+   (electric-formatter-test-execute ")(" ") (")
+   (electric-formatter-test-execute ")`(" ") `(")
 
-   (insert ",hoge\n")
-   (should (equal (electric-formatter-test-execute ",hoge") ",hoge\n, hoge"))
-   (should (equal (point) (+ (length ",hoge\n, hoge") 1)))
-   (erase-buffer)
-
-   (insert "\n,hoge")
-   (goto-char (point-min))
-   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n,hoge"))
-   (should (equal (point) (+ (length ", hoge") 1)))
-   (erase-buffer)
-
-   (should (equal (electric-formatter-test-execute ",hoge \",hoge")
-                  ", hoge \",hoge"))
-   (should (equal (point) (+ (length ", hoge \",hoge") 1)))
-   (erase-buffer)
-
-   (insert "\n\",hoge")
-   (goto-char (point-min))
-   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n\",hoge"))
-   (should (equal (point) (+ (length ", hoge") 1)))
-   (erase-buffer)
-
-   (should (equal (electric-formatter-test-execute ",hoge ;,hoge")
-                  ", hoge ;,hoge"))
-   (should (equal (point) (+ (length ", hoge ;,hoge") 1)))
-   (erase-buffer)
-
-   (insert "\n;,hoge")
-   (goto-char (point-min))
-   (should (equal (electric-formatter-test-execute ",hoge") ", hoge\n;,hoge"))
-   (should (equal (point) (+ (length ", hoge") 1)))
-   (erase-buffer)
-
-   ;; (insert "1,2")
-   ;; (goto-char (point-min))
-   ;; ;;(set-mark-command 1)
-   ;; (goto-char (end-of-line))
-   ;; (electric-formatter-region (point-min) (point-max))
-   ;; ;; (should (equal (substring-no-properties (buffer-string))
-   ;; ;;                "1, 2"))
-   ;; (should (equal (point) (+ (length ", hoge") 1)))
-   ;; (erase-buffer)
+   (electric-formatter-test-execute "),(" ") ,(")
+   ;;(electric-formatter-test-execute ")\"" ") \"")
    ))
 
 (ert-run-tests-interactively t)
