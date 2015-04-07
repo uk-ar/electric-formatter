@@ -1,4 +1,4 @@
-;;; electric-formatter.el --- Realtime Formatter which independent of Programming language.
+;;; electric-formatter.el --- Realtime code formatter which independent of programming language.
 
 ;;-------------------------------------------------------------------
 ;;
@@ -45,7 +45,7 @@
 (defvar electric-formatter-list nil)
 (make-variable-buffer-local 'electric-formatter-list)
 
-(defun electric-formatter-regex (formatter-list symbol)
+(defun electric-formatter-regexp (formatter-list symbol)
   (let ((strings
          (mapcar 'cdr
                  (remove-if-not
@@ -54,22 +54,26 @@
     (if strings
         (regexp-opt strings t))))
 
-(defun electric-formatter-regex-opt (formatter-list)
+(defvar electric-formatter-beginnig-regexp "\\(\\w\\|\\s.\\|\\s'\\|s\"\\)")
+(defvar electric-formatter-end-regexp "\\(\\w\\|\\s.\\|\\s)\\)")
+
+(defun electric-formatter-regexp-opt (formatter-list)
   (delq
    nil
    (append
     (let ((space-after
-           (electric-formatter-regex formatter-list 'space-after))
+           (electric-formatter-regexp formatter-list 'space-after))
           (space-before
-           (electric-formatter-regex formatter-list 'space-before)))
+           (electric-formatter-regexp formatter-list 'space-before)))
       (list
        (if space-after
            (cons
-            (concat space-after "\\(\\w\\|\\s.\\)")
+            ;; include punctuation for ruby's symbol :foo
+            (concat space-after electric-formatter-beginnig-regexp)
             "\\1 \\2"))
        (if space-before
            (cons
-            (concat "\\(\\w\\|\\s.\\)" space-before)
+            (concat electric-formatter-end-regexp space-before)
             "\\1 \\2"))))
     (remove-if-not
      '(lambda (elem)
@@ -80,7 +84,7 @@
   (reduce #'electric-formatter-1
           (cons
            string
-           (electric-formatter-regex-opt electric-formatter-list))))
+           (electric-formatter-regexp-opt electric-formatter-list))))
 
 (defun electric-formatter-1 (string rule)
   (replace-regexp-in-string (car rule) (cdr rule) string))
@@ -133,6 +137,7 @@
 (defun electric-formatter-region (&optional beg end)
   (interactive "r")
   (let ((pos (point))
+        (eobp (eobp))
         (pos-marker (set-marker (make-marker) (point)))
         (beg (min beg end))
         (end (max beg end)))
@@ -142,6 +147,10 @@
      ((= beg pos)
       (goto-char beg))
      ((= end pos)) ;;nop
+     ((and (< beg pos) (< pos end))
+      (goto-char pos))
+     (eobp
+      (goto-char (point-max)))
      (t
       (goto-char (marker-position pos-marker))))
     (set-marker pos-marker nil)))
@@ -153,9 +162,6 @@
                 (space-before . "=")))
 
 ;;(assoc-default 'space-after electric-formatter-list)
-
-;; for ruby's :hoge,:fuga
-;; (replace-regexp-in-string ",\\(\\w\\|\\s.\\)" . ", \\1" . ":foo,:bar")
 
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
@@ -173,10 +179,12 @@
 (defun electric-formatter-emacs-lisp-mode-setup()
   (setq electric-formatter-list
         '((space-after . "=")
-          (space-after . ",")
+          ;;(space-after . ",") macro escape
           (space-after . ")")
+          (space-after . "\"")
           (space-before . "=")
           (space-before . "(")
+          (space-before . "\"")
           )))
 
 (add-hook 'emacs-lisp-mode-hook
