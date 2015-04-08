@@ -33,13 +33,6 @@
 
 ;;; Commentary:
 
-;; Smart region guess what you want to select by one command.
-;; If you call this command multiple times at the same position, it expands selected region (it calls ```er/expand-region```).
-;; Else, if you move from the mark and call this command, it select the region rectangular (it call ```rectangle-mark-mode```).
-;; Else, if you move from the mark and call this command at same column as mark, it add cursor to each line (it call ```mc/edit-lines```).
-
-;; This basic concept is from [sense-region](https://gist.github.com/tnoda/1776988).
-
 (require 'cl-lib)
 ;;; Code:
 (defvar electric-formatter-list nil)
@@ -183,14 +176,19 @@
                 (space-after . ",")
                 (space-after . ">")
                 (space-after . "<")
+                (space-after . "&")
+                (space-after . "|")
 
                 (space-before . "=")
                 (space-before . ">")
                 (space-before . "<")
+                (space-before . "&")
+                (space-before . "|")
                 ("\n\n" . "\n");;Two blank lines to one blank line
                 ;; multibyte
                 ))
 
+;;http://emacswiki.org/emacs/elisp-format.el
 (defun electric-formatter-emacs-lisp-mode-setup()
   (setq electric-formatter-list
         '(;;common
@@ -214,20 +212,24 @@
 ;;               '((space-after . "comment")
 ;;                 ))
 
-;;http://emacswiki.org/emacs/elisp-format.el
 (defun electric-formatter-ruby-mode-setup()
   (setq electric-formatter-list
         '((space-after . "=")
           (space-after . ",")
           (space-after . ">")
           (space-after . "<")
+          (space-after . "&")
+          (space-after . "|")
 
           (space-before . "=")
           (space-before . ">")
           (space-before . "<")
+          (space-before . "&")
+          (space-before . "|")
           ("\n\n" . "\n");;Two blank lines to one blank line
-
-          (" ! " . " not ");; Todo white space
+          ;;advanced
+          ("\\_<and\\_>" . "&&")
+          ("\\_<or\\_>" . "||")
         )))
 
 (add-hook 'emacs-lisp-mode-hook

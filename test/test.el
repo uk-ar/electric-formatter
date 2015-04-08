@@ -219,6 +219,10 @@
    (electric-formatter-test-execute "a=>b" "a => b")
    (electric-formatter-test-execute "a<=b" "a <= b")
    (electric-formatter-test-execute "a<=>b" "a <=> b")
+   (electric-formatter-test-execute "a&&b" "a && b")
+   (electric-formatter-test-execute "a||b" "a || b")
+   (electric-formatter-test-execute "a and b" "a && b")
+   (electric-formatter-test-execute "a or b" "a || b")
    ))
 
 (ert-run-tests-interactively t)
