@@ -54,8 +54,9 @@
     (if strings
         (regexp-opt strings t))))
 
-(defvar electric-formatter-beginning-regexp "\\(\\w\\|\\s.\\|\\s'\\|s\"\\)")
-(defvar electric-formatter-end-regexp "\\(\\w\\|\\s.\\|\\s)\\|s\"\\)")
+;; Including symbol(\\s_) for ruby's symbol :foo
+(defvar electric-formatter-beginning-regexp "\\(\\w\\|\\s'\\|\\s\"\\|\\s_\\)")
+(defvar electric-formatter-end-regexp "\\(\\w\\|\\s)\\|s\"\\)")
 
 (defun electric-formatter-regexp-opt (formatter-list)
   (delq
@@ -68,8 +69,7 @@
       (list
        (if space-after
            (cons
-            ;; include punctuation for ruby's symbol :foo
-            (concat space-after electric-formatter-beginnig-regexp)
+            (concat space-after electric-formatter-beginning-regexp)
             "\\1 \\2"))
        (if space-before
            (cons
@@ -132,7 +132,7 @@
            (- pos 1);;-1 for forward-char
            (+ (point)
               (skip-syntax-forward
-               "\"<" (+ 1 (point)))
+               "\"<" (min (+ 1 (point)) end))
            ))))))
     (set-marker end-marker nil)
     (cons beg (point))))
@@ -158,11 +158,10 @@
       (goto-char (marker-position pos-marker))))
     (set-marker pos-marker nil)))
 
-;;nconc?
-(setq-default electric-formatter-list
-              '((space-after . "=")
-                (space-after . ",")
-                (space-before . "=")))
+(defun electric-formatter-buffer ()
+  (interactive)
+  (electric-formatter-region (point-min) (point-max))
+  )
 
 ;;(assoc-default 'space-after electric-formatter-list)
 
@@ -179,23 +178,65 @@
 ;;post-self-insert-hook
 
 ;;; Setting
+(setq-default electric-formatter-list
+              '((space-after . "=")
+                (space-after . ",")
+                (space-after . ">")
+                (space-after . "<")
+
+                (space-before . "=")
+                (space-before . ">")
+                (space-before . "<")
+                ("\n\n" . "\n");;Two blank lines to one blank line
+                ;; multibyte
+                ))
+
 (defun electric-formatter-emacs-lisp-mode-setup()
   (setq electric-formatter-list
-        '((space-after . "=")
-          ;;(space-after . ",") macro escape
+        '(;;common
+          ;;(space-after . "=") for symbol name
+          ;;(space-after . ",") for macro escape
+          ;;(space-before . "=") for symbol name
+          ("\n\n" . "\n");;Two blank lines to one blank line
+
+          ;;mode specify
           (space-after . ")")
           (space-after . "\"")
           (space-after . ".")
-          (space-before . "=")
+
           (space-before . "(")
           (space-before . "\"")
           (space-before . ".")
+          ;;advanced
+          (")[\n\t ]+)" . "))")
           )))
+;; (setq-default electric-formatter-comment-list
+;;               '((space-after . "comment")
+;;                 ))
+
+;;http://emacswiki.org/emacs/elisp-format.el
+(defun electric-formatter-ruby-mode-setup()
+  (setq electric-formatter-list
+        '((space-after . "=")
+          (space-after . ",")
+          (space-after . ">")
+          (space-after . "<")
+
+          (space-before . "=")
+          (space-before . ">")
+          (space-before . "<")
+          ("\n\n" . "\n");;Two blank lines to one blank line
+
+          (" ! " . " not ");; Todo white space
+        )))
 
 (add-hook 'emacs-lisp-mode-hook
           'electric-formatter-emacs-lisp-mode-setup)
 
 (add-hook 'lisp-interaction-mode-hook
           'electric-formatter-emacs-lisp-mode-setup)
+
+(add-hook 'ruby-mode-hook
+          'electric-formatter-ruby-mode-setup)
 
 (provide 'electric-formatter)

@@ -1,4 +1,6 @@
 (require 'electric-formatter)
+(require 'ert)
+(require 'ert-x)
 
 (ert-deftest electric-formatter-comma ()
   (should
@@ -29,6 +31,18 @@
    (equal
     (electric-formatter-1 "=a" '("=\\(\\w\\)" . "= \\1"))
     "= a")))
+
+(ert-deftest electric-formatter-blank-lines ()
+  (should
+   (equal
+    (electric-formatter-1 "\n\n" '("\n\n" . "\n"))
+    "\n")))
+
+(ert-deftest electric-formatter-whitespace ()
+  (should
+   (equal
+    (electric-formatter-1 ") \n )" '(")[\n\t ]+)" . "))"))
+    "))")))
 
 (ert-deftest electric-formatter-regexp-space-after ()
   (should
@@ -88,26 +102,10 @@
       ("foo" . "bar"))
     )))
 
-(defmacro electric-formatter-test-common (&rest body)
-  (declare (debug t))
-  `(with-temp-buffer
-  ;; `(with-current-buffer (get-buffer-create "hoge")
-     (switch-to-buffer (current-buffer))
-     (fundamental-mode)
-     (erase-buffer)
-     ;; (should-not electric-indent-mode)
-     ;; (should-not electric-formatter-mode)
-     (unwind-protect
-         ,@body
-       ;; (electric-indent-mode -1)
-       ;; (electric-formatter-mode -1)
-       ;; chomp
-       (replace-regexp-in-string "[ \t\n]*$" ""
-                                 (substring-no-properties (buffer-string)))
-       )))
-
 (defun electric-formatter-test-execute (string expect &optional pre post)
-  (should (equal (electric-formatter string) expect))
+  (erase-buffer)
+  ;; for test depend on syntax table
+  ;;(should (equal (electric-formatter string) expect))
   (when pre (insert pre))
   (insert string)
   (when post (save-excursion (insert post)))
@@ -116,32 +114,33 @@
   (should (equal (substring-no-properties (buffer-string))
                  (concat pre expect post)))
   (should (equal (point) (+ (length (concat pre expect)) 1)))
-  (erase-buffer)
   )
 
 (defmacro electric-formatter-test-region (string expect point)
   (declare (debug t))
   `(progn
+     (erase-buffer)
+     (insert "\n")
      (insert ,string)
+     (save-excursion (insert "\n"))
      (goto-char , point)
      (electric-formatter-region (+ (point-min) 1) (- (point-max) 1))
-     (should (equal (substring-no-properties (buffer-string))
+     (should (equal (substring-no-properties
+                     (buffer-substring (+ (point-min) 1) (- (point-max) 1)))
                     ,expect))
-     (should (equal (point) , point))
-     (erase-buffer)))
+     (should (equal (point) , point))))
 
 (ert-deftest electric-formatter-in-default ()
-  (electric-formatter-test-common
-
+  (ert-with-test-buffer (:name "electric-formatter")
    (electric-formatter-mode 1)
-
    (should electric-formatter-mode)
-   (should (eq 3 (length electric-formatter-list)))
+
+   (should (< 3 (length electric-formatter-list)))
 
    (electric-formatter-test-execute ",hoge" ", hoge")
    (electric-formatter-test-execute ")hoge" ")hoge")
 
-      (electric-formatter-test-execute ",hoge" ", hoge" nil "\n,hoge")
+   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n,hoge")
    (electric-formatter-test-execute ",hoge" ", hoge" ",hoge\n" nil)
 
    (electric-formatter-test-execute ",hoge" ", hoge" nil "\n\",hoge\"")
@@ -158,21 +157,22 @@
    ;;(electric-formatter-test-execute ",hoge" ", hoge" ";,hoge" nil)
 
    ;;end of region
-   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (- (point-max) 1))
+   (electric-formatter-test-region "1,2" "1, 2" (- (point-max) 1))
    ;;beginnig of region
-   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (+ (point-min) 1))
+   (electric-formatter-test-region "1,2" "1, 2" (+ (point-min) 1))
    ;;above region
-   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (point-min))
+   (electric-formatter-test-region "1,2" "1, 2" (point-min))
    ;;below region
-   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (point-max))
+   (electric-formatter-test-region "1,2" "1, 2" (point-max))
    ;;inside region
-   (electric-formatter-test-region "\n1,2\n" "\n1, 2\n" (+ (point-min) 2))
+   (electric-formatter-test-region "1,2" "1, 2" (+ (point-min) 2))
+   (electric-formatter-test-region "\n\n" "\n"  (+ (point-min) 2))
+   (electric-formatter-test-region "\n\n\n" "\n"(+ (point-min) 2))
    )
   )
 
 (ert-deftest electric-formatter-in-elisp ()
-  (electric-formatter-test-common
-
+  (ert-with-test-buffer (:name "electric-formatter")
    (emacs-lisp-mode)
    (electric-formatter-mode 1)
 
@@ -193,12 +193,32 @@
    (electric-formatter-test-execute "a." "a .")
    (electric-formatter-test-execute ".a" ". a")
 
-   ;;(electric-formatter-test-execute "\"a\"a" "\"a\" a")
-   ;;(electric-formatter-test-execute "\"a\"a" "\"a\" a" "\n")
+   (electric-formatter-test-execute "\"a\"a" "\"a\" a")
+   (electric-formatter-test-execute "\"a\"a" "\"a\" a" "\n")
 
-   (electric-formatter-test-execute "\"\"a" "\"\" a");;only bobp?
-   ;;(electric-formatter-test-execute "\"\"a" "\"\" a" "\n");;only bobp?
+   (electric-formatter-test-execute "\"\"a" "\"\" a")
+   (electric-formatter-test-execute "\"\"a" "\"\" a" "\n" nil)
+   (electric-formatter-test-execute "\"\"a" "\"\" a" nil "\n")
    ;;(electric-formatter-test-execute "\"\"(" "\"\" (")
+   (electric-formatter-test-region ") )" "))"(+ (point-min) 2))
+   (electric-formatter-test-region ") \n \n )" "))"(+ (point-min) 2))
+   ))
+
+(ert-deftest electric-formatter-in-ruby ()
+  (ert-with-test-buffer (:name "electric-formatter")
+   (ruby-mode)
+   (electric-formatter-mode 1)
+
+   (should electric-formatter-mode)
+   ;;(should (eq (length electric-formatter-list) 6))
+   (electric-formatter-test-execute "a=b" "a = b")
+   (electric-formatter-test-execute "a===b" "a === b")
+   (electric-formatter-test-execute "a===:b" "a === :b")
+   (electric-formatter-test-execute ":a===:b" ":a === :b")
+
+   (electric-formatter-test-execute "a=>b" "a => b")
+   (electric-formatter-test-execute "a<=b" "a <= b")
+   (electric-formatter-test-execute "a<=>b" "a <=> b")
    ))
 
 (ert-run-tests-interactively t)
