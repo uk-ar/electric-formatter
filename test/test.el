@@ -44,6 +44,13 @@
     (electric-formatter-1 ") \n )" '(")[\n\t ]+)" . "))"))
     "))")))
 
+(ert-deftest electric-formatter-multibyte ()
+  (should
+   (equal
+    (electric-formatter-1 "あa" '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+                                  . "\\1 \\2"))
+    "あ a")))
+
 (ert-deftest electric-formatter-regexp-space-after ()
   (should
    (equal
@@ -168,8 +175,7 @@
    (electric-formatter-test-region "1,2" "1, 2" (+ (point-min) 2))
    (electric-formatter-test-region "\n\n" "\n"  (+ (point-min) 2))
    (electric-formatter-test-region "\n\n\n" "\n"(+ (point-min) 2))
-   )
-  )
+   ))
 
 (ert-deftest electric-formatter-in-elisp ()
   (ert-with-test-buffer (:name "electric-formatter")
@@ -224,5 +230,16 @@
    (electric-formatter-test-execute "a and b" "a && b")
    (electric-formatter-test-execute "a or b" "a || b")
    ))
+
+(ert-deftest electric-formatter-in-org ()
+  (ert-with-test-buffer (:name "electric-formatter")
+    (org-mode)
+    (electric-formatter-mode 1)
+
+    (should electric-formatter-mode)
+
+    (electric-formatter-test-execute "あaあ" "あ a あ")
+    (electric-formatter-test-execute "aあa" "a あ a")
+    ))
 
 (ert-run-tests-interactively t)

@@ -232,6 +232,14 @@
           ("\\_<or\\_>" . "||")
         )))
 
+(defun electric-formatter-text-mode-setup()
+  (setq electric-formatter-list
+        '(("\n\n" . "\n");;Two blank lines to one blank line
+          ;;Space between multibyte and unibyte
+          ("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
+          ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2"))
+          ))
+
 (add-hook 'emacs-lisp-mode-hook
           'electric-formatter-emacs-lisp-mode-setup)
 
@@ -240,5 +248,11 @@
 
 (add-hook 'ruby-mode-hook
           'electric-formatter-ruby-mode-setup)
+
+(add-hook 'org-mode-hook
+          'electric-formatter-text-mode-setup)
+
+(add-hook 'markdown-mode-hook
+          'electric-formatter-text-mode-setup)
 
 (provide 'electric-formatter)
