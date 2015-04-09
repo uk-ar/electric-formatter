@@ -173,5 +173,25 @@
         )
     (remove-hook 'post-self-insert-hook #'electric-formatter-electric)))
 ;;post-self-insert-hook
+
+(defcustom electric-formatter-disable-modes nil
+  "Major modes `electric-formatter-mode' can not run on."
+  :group 'electric-formatter)
+
+;; copy from auto-complete-mode-maybe
+(defun electric-formatter-mode-maybe ()
+  "What buffer `electric-formatter-mode' prefers."
+  (when (and (not (minibufferp (current-buffer)))
+             (not (memq major-mode electric-formatter-disable-modes))
+             (electric-formatter-mode 1)
+             )))
+
+;; copy from global-auto-complete-mode
+;;;###autoload
+(define-global-minor-mode global-electric-formatter-mode
+  electric-formatter-mode electric-formatter-mode-maybe
+  ;; :init-value t has bug?
+  :group 'electric-formatter)
+
 (provide 'electric-formatter)
 ;;; electric-formatter.el ends here

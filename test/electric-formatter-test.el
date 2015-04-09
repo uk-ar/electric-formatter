@@ -177,7 +177,7 @@
    (electric-formatter-mode 1)
    (should electric-formatter-mode)
 
-   (should (< 3 (length ef-rule-list)))
+   (should (< 2 (length ef-rule-list)))
 
    (ef-test-execute ",hoge" ", hoge")
    (ef-test-execute ")hoge" ")hoge")

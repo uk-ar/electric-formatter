@@ -29,64 +29,61 @@
 (require 'electric-formatter)
 
 ;;; Setting:
-(setq-default ef-rule-list
-              '((space-after . "=")
-                (space-after . ",")
-                (space-after . ">")
-                (space-after . "<")
-                (space-after . "&")
-                (space-after . "|")
+(defvar ef-text-mode-rule-list
+  `(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
+    ("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
+    ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2")
+    (,(concat "\\(,\\)" ef-beginning-regexp) . "\\1 \\2")))
 
-                (space-before . "=")
-                (space-before . ">")
-                (space-before . "<")
-                (space-before . "&")
-                (space-before . "|")
-                ("\n\n" . "\n");;Two blank lines to one blank line
-                ;; multibyte
-                ))
+(defvar ef-prog-mode-rule-list
+  `(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
+    (space-after . "=")
+    (space-after . ",")
+    (space-after . ">")
+    (space-after . "<")
+    (space-after . "&")
+    (space-after . "|")
+
+    (space-before . "=")
+    (space-before . ">")
+    (space-before . "<")
+    (space-before . "&")
+    (space-before . "|")
+    ;;(,(concat "\\(\\s.\\)" ef-beginning-regexp) . "\\1 \\2")
+    ;;(,(concat ef-end-regexp "\\(\\s.\\)") . "\\1 \\2")
+    ))
+
+(defvar ef-ruby-mode-rule-list
+  (append ef-prog-mode-rule-list
+          ;;advanced
+          '(("\\_<and\\_>" . "&&")
+            ("\\_<or\\_>" . "||"))))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
-(defun ef-emacs-lisp-mode-setup()
-  (setq ef-rule-list
-        '(;;common
-          ;;(space-after . "=") for symbol name
-          ;;(space-after . ",") for macro escape
-          ;;(space-before . "=") for symbol name
-          ("\n[\n]+" . "\n\n");;Two blank lines to one blank line
+(defvar ef-emacs-lisp-mode-rule-list
+  (append ef-prog-mode-rule-list
+          '((space-after . ")")
+            (space-after . "\"")
+            (space-after . ".")
 
-          ;;mode specify
-          (space-after . ")")
-          (space-after . "\"")
-          (space-after . ".")
+            (space-before . "(")
+            (space-before . "\"")
+            (space-before . ".")
+            ;;advanced
+            (")[\n\t ]+)" . "))")
+            )))
 
-          (space-before . "(")
-          (space-before . "\"")
-          (space-before . ".")
-          ;;advanced
-          (")[\n\t ]+)" . "))")
-          )))
-;; (setq-default ef-comment-list
-;;               '((space-after . "comment")
-;;                 ))
+(setq-default ef-rule-list ef-prog-mode-rule-list)
+(global-electric-formatter-mode 1)
 
 (defun ef-ruby-mode-setup()
-  (setq ef-rule-list
-        `(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-          (,(concat "\\(\\s.\\)" ef-beginning-regexp) . "\\1 \\2")
-          (,(concat ef-end-regexp "\\(\\s.\\)") . "\\1 \\2")
-          ;;advanced
-          ("\\_<and\\_>" . "&&")
-          ("\\_<or\\_>" . "||")
-          )))
+  (setq ef-rule-list ef-ruby-mode-rule-list))
 
 (defun ef-text-mode-setup()
-  (setq ef-rule-list
-        '(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-          ;;Space between multibyte and unibyte
-          ("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
-          ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2"))
-        ))
+  (setq ef-rule-list ef-text-mode-rule-list))
+
+(defun ef-emacs-lisp-mode-setup()
+  (setq ef-rule-list ef-emacs-lisp-mode-rule-list))
 
 (add-hook 'emacs-lisp-mode-hook
           'ef-emacs-lisp-mode-setup)
