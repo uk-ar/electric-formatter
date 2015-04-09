@@ -35,63 +35,64 @@
 
 (require 'cl-lib)
 ;;; Code:
-(defvar electric-formatter-list nil)
-(make-variable-buffer-local 'electric-formatter-list)
+(defvar ef-rule-list nil)
+(make-variable-buffer-local 'ef-rule-list)
 
-(defun electric-formatter-regexp (formatter-list symbol)
+(defun ef-regexp (formatter-list symbol)
   (let ((strings
          (mapcar 'cdr
-                 (remove-if-not
+                 (cl-remove-if-not
                   (lambda (elem) (eq (car elem) symbol))
                   formatter-list))))
     (if strings
         (regexp-opt strings t))))
 
 ;; Including symbol(\\s_) for ruby's symbol :foo
-(defvar electric-formatter-beginning-regexp "\\(\\w\\|\\s'\\|\\s\"\\|\\s_\\)")
-(defvar electric-formatter-end-regexp "\\(\\w\\|\\s)\\|s\"\\)")
+(defvar ef-beginning-regexp "\\(\\w\\|\\s'\\|\\s\"\\|\\s_\\)")
+(defvar ef-end-regexp "\\(\\w\\|\\s)\\|s\"\\)")
 
-(defun electric-formatter-regexp-opt (formatter-list)
+(defun ef-regexp-opt (formatter-list)
   (delq
    nil
    (append
     (let ((space-after
-           (electric-formatter-regexp formatter-list 'space-after))
+           (ef-regexp formatter-list 'space-after))
           (space-before
-           (electric-formatter-regexp formatter-list 'space-before)))
+           (ef-regexp formatter-list 'space-before)))
       (list
        (if space-after
            (cons
-            (concat space-after electric-formatter-beginning-regexp)
+            (concat space-after ef-beginning-regexp)
             "\\1 \\2"))
        (if space-before
            (cons
-            (concat electric-formatter-end-regexp space-before)
+            (concat ef-end-regexp space-before)
             "\\1 \\2"))))
-    (remove-if-not
+    (cl-remove-if-not
      '(lambda (elem)
         (stringp (car elem)))
      formatter-list))))
 
-(defun electric-formatter (string)
-  (reduce #'electric-formatter-1
+(defun ef-format (string)
+  (cl-reduce #'ef-format-1
           (cons
            string
-           (electric-formatter-regexp-opt electric-formatter-list))))
+           (ef-regexp-opt ef-rule-list))))
 
-(defun electric-formatter-1 (string rule)
+(defun ef-format-1 (string rule)
   (replace-regexp-in-string (car rule) (cdr rule) string))
 
+;;hooked
 (defun electric-formatter-electric ()
   (undo-boundary)
   (electric-formatter-region
              (line-beginning-position) (point)))
 
-(defun electric-formatter-range (start end)
+(defun ef-range (start end)
   ;; must go to after inserted region
   ;; save-execursion cause bug
   (let* ((str (buffer-substring-no-properties start end))
-         (to-str (electric-formatter str)))
+         (to-str (ef-format str)))
     (unless (equal str to-str)
       (delete-region start end)
       (goto-char (min start end))
@@ -121,7 +122,7 @@
               );(offset (save-excursion (skip-syntax-backward "\">" beg)))
           ;;until comment or string start
           (skip-syntax-forward "^\"<" (marker-position end-marker))
-          (electric-formatter-range
+          (ef-range
            (- pos 1);;-1 for forward-char
            (+ (point)
               (skip-syntax-forward
@@ -130,6 +131,7 @@
     (set-marker end-marker nil)
     (cons beg (point))))
 
+;;;###autoload
 (defun electric-formatter-region (&optional beg end)
   (interactive "r")
   (let ((pos (point))
@@ -151,13 +153,15 @@
       (goto-char (marker-position pos-marker))))
     (set-marker pos-marker nil)))
 
+;;;###autoload
 (defun electric-formatter-buffer ()
   (interactive)
   (electric-formatter-region (point-min) (point-max))
   )
 
-;;(assoc-default 'space-after electric-formatter-list)
+;;(assoc-default 'space-after ef-rule-list)
 
+;;;###autoload
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
   :global t
@@ -169,90 +173,5 @@
         )
     (remove-hook 'post-self-insert-hook #'electric-formatter-electric)))
 ;;post-self-insert-hook
-
-;;; Setting
-(setq-default electric-formatter-list
-              '((space-after . "=")
-                (space-after . ",")
-                (space-after . ">")
-                (space-after . "<")
-                (space-after . "&")
-                (space-after . "|")
-
-                (space-before . "=")
-                (space-before . ">")
-                (space-before . "<")
-                (space-before . "&")
-                (space-before . "|")
-                ("\n\n" . "\n");;Two blank lines to one blank line
-                ;; multibyte
-                ))
-
-;;http://emacswiki.org/emacs/elisp-format.el
-(defun electric-formatter-emacs-lisp-mode-setup()
-  (setq electric-formatter-list
-        '(;;common
-          ;;(space-after . "=") for symbol name
-          ;;(space-after . ",") for macro escape
-          ;;(space-before . "=") for symbol name
-          ("\n\n" . "\n");;Two blank lines to one blank line
-
-          ;;mode specify
-          (space-after . ")")
-          (space-after . "\"")
-          (space-after . ".")
-
-          (space-before . "(")
-          (space-before . "\"")
-          (space-before . ".")
-          ;;advanced
-          (")[\n\t ]+)" . "))")
-          )))
-;; (setq-default electric-formatter-comment-list
-;;               '((space-after . "comment")
-;;                 ))
-
-(defun electric-formatter-ruby-mode-setup()
-  (setq electric-formatter-list
-        '((space-after . "=")
-          (space-after . ",")
-          (space-after . ">")
-          (space-after . "<")
-          (space-after . "&")
-          (space-after . "|")
-
-          (space-before . "=")
-          (space-before . ">")
-          (space-before . "<")
-          (space-before . "&")
-          (space-before . "|")
-          ("\n\n" . "\n");;Two blank lines to one blank line
-          ;;advanced
-          ("\\_<and\\_>" . "&&")
-          ("\\_<or\\_>" . "||")
-        )))
-
-(defun electric-formatter-text-mode-setup()
-  (setq electric-formatter-list
-        '(("\n\n" . "\n");;Two blank lines to one blank line
-          ;;Space between multibyte and unibyte
-          ("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
-          ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2"))
-          ))
-
-(add-hook 'emacs-lisp-mode-hook
-          'electric-formatter-emacs-lisp-mode-setup)
-
-(add-hook 'lisp-interaction-mode-hook
-          'electric-formatter-emacs-lisp-mode-setup)
-
-(add-hook 'ruby-mode-hook
-          'electric-formatter-ruby-mode-setup)
-
-(add-hook 'org-mode-hook
-          'electric-formatter-text-mode-setup)
-
-(add-hook 'markdown-mode-hook
-          'electric-formatter-text-mode-setup)
-
 (provide 'electric-formatter)
+;;; electric-formatter.el ends here

@@ -1,60 +1,95 @@
+;;; electric-formatter-test.el --- test for electric-formatter
+
+;;-------------------------------------------------------------------
+;;
+;; Copyright (C) 2015 Yuuki Arisawa
+;;
+;; This file is NOT part of Emacs.
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation; either version 2 of
+;; the License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be
+;; useful, but WITHOUT ANY WARRANTY; without even the implied
+;; warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+;; PURPOSE.  See the GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public
+;; License along with this program; if not, write to the Free
+;; Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+;; MA 02111-1307 USA
+;;
+;;-------------------------------------------------------------------
+
+;;; Commentary:
 (require 'electric-formatter)
 (require 'ert)
 (require 'ert-x)
-
-(ert-deftest electric-formatter-comma ()
+;;; Code:
+(ert-deftest ef-comma ()
   (should
    (equal
-    (electric-formatter-1 ",hoge" '(",\\(\\w\\)" . ", \\1"))
+    (ef-format-1 ",hoge" '(",\\(\\w\\)" . ", \\1"))
     ", hoge")))
 
-(ert-deftest electric-formatter-paren ()
+(ert-deftest ef-paren ()
   (should
    (equal
-    (electric-formatter-1 "hoge(" '("\\(\\w\\)(" . "\\1 ("))
+    (ef-format-1 "hoge(" '("\\(\\w\\)(" . "\\1 ("))
     "hoge (")))
 
-(ert-deftest electric-formatter-close-paren ()
+(ert-deftest ef-close-paren ()
   (should
    (equal
-    (electric-formatter-1 ")hoge" '(")\\(\\w\\)" . ") \\1"))
+    (ef-format-1 ")hoge" '(")\\(\\w\\)" . ") \\1"))
     ") hoge")))
 
-(ert-deftest electric-formatter-before-= ()
+(ert-deftest ef-before-= ()
   (should
    (equal
-    (electric-formatter-1 "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
+    (ef-format-1 "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
     "a =")))
 
-(ert-deftest electric-formatter-after-= ()
+(ert-deftest ef-after-= ()
   (should
    (equal
-    (electric-formatter-1 "=a" '("=\\(\\w\\)" . "= \\1"))
+    (ef-format-1 "=a" '("=\\(\\w\\)" . "= \\1"))
     "= a")))
 
-(ert-deftest electric-formatter-blank-lines ()
-  (should
-   (equal
-    (electric-formatter-1 "\n\n" '("\n\n" . "\n"))
-    "\n")))
+(ert-deftest ef-blank-lines ()
+  (let ((rule '("\n[\n]+" . "\n\n")))
+    (should
+     (equal
+      (ef-format-1 "a\n\na" rule)
+      "a\n\na"))
+    (should
+     (equal
+      (ef-format-1 "a\n\n\na" rule)
+      "a\n\na"))
+    (should
+     (equal
+      (ef-format-1 "a\n\n\n\na" rule)
+      "a\n\na"))))
 
-(ert-deftest electric-formatter-whitespace ()
+(ert-deftest ef-whitespace ()
   (should
    (equal
-    (electric-formatter-1 ") \n )" '(")[\n\t ]+)" . "))"))
+    (ef-format-1 ") \n )" '(")[\n\t ]+)" . "))"))
     "))")))
 
-(ert-deftest electric-formatter-multibyte ()
+(ert-deftest ef-multibyte ()
   (should
    (equal
-    (electric-formatter-1 "あa" '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+    (ef-format-1 "あa" '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
                                   . "\\1 \\2"))
     "あ a")))
 
-(ert-deftest electric-formatter-regexp-space-after ()
+(ert-deftest ef-regexp-space-after ()
   (should
    (equal
-    (electric-formatter-regexp
+    (ef-regexp
      '((space-after . "=")
        (space-after . ",")
        (space-before . "=")
@@ -63,20 +98,20 @@
     "\\([,=]\\)"
     )))
 
-(ert-deftest electric-formatter-regexp-space-after-not-exist ()
+(ert-deftest ef-regexp-space-after-not-exist ()
   (should
    (equal
-    (electric-formatter-regexp
+    (ef-regexp
      '((space-before . "=")
        ("foo" . "bar"))
      'space-after)
     nil
     )))
 
-(ert-deftest electric-formatter-regexp-space-before ()
+(ert-deftest ef-regexp-space-before ()
   (should
    (equal
-    (electric-formatter-regexp
+    (ef-regexp
      '((space-after . "=")
        (space-after . ",")
        (space-before . "=")
@@ -85,31 +120,31 @@
     "\\(=\\)"
     )))
 
-(ert-deftest electric-formatter-regexp-opt ()
+(ert-deftest ef-regexp-opt ()
   (should
    (equal
-    (electric-formatter-regexp-opt
+    (ef-regexp-opt
      '(("foo" . "bar")
        (space-after . "=")
        (space-after . ",")
        (space-before . "=")
        ))
-    `((,(concat "\\([,=]\\)" electric-formatter-beginning-regexp) . "\\1 \\2")
-      (,(concat electric-formatter-end-regexp "\\(=\\)") . "\\1 \\2")
+    `((,(concat "\\([,=]\\)" ef-beginning-regexp) . "\\1 \\2")
+      (,(concat ef-end-regexp "\\(=\\)") . "\\1 \\2")
       ("foo" . "bar"))
     )))
 
-(ert-deftest electric-formatter-regexp-opt-after-not-exist ()
+(ert-deftest ef-regexp-opt-after-not-exist ()
   (should
    (equal
-    (electric-formatter-regexp-opt
+    (ef-regexp-opt
      '(("foo" . "bar")
        (space-before . "=")))
-    `((,(concat electric-formatter-end-regexp "\\(=\\)") . "\\1 \\2")
+    `((,(concat ef-end-regexp "\\(=\\)") . "\\1 \\2")
       ("foo" . "bar"))
     )))
 
-(defun electric-formatter-test-execute (string expect &optional pre post)
+(defun ef-test-execute (string expect &optional pre post)
   (erase-buffer)
   ;; for test depend on syntax table
   ;;(should (equal (electric-formatter string) expect))
@@ -123,7 +158,7 @@
   (should (equal (point) (+ (length (concat pre expect)) 1)))
   )
 
-(defmacro electric-formatter-test-region (string expect point)
+(defmacro ef-test-region (string expect point)
   (declare (debug t))
   `(progn
      (erase-buffer)
@@ -137,109 +172,109 @@
                     ,expect))
      (should (equal (point) , point))))
 
-(ert-deftest electric-formatter-in-default ()
+(ert-deftest ef-in-default ()
   (ert-with-test-buffer (:name "electric-formatter")
    (electric-formatter-mode 1)
    (should electric-formatter-mode)
 
-   (should (< 3 (length electric-formatter-list)))
+   (should (< 3 (length ef-rule-list)))
 
-   (electric-formatter-test-execute ",hoge" ", hoge")
-   (electric-formatter-test-execute ")hoge" ")hoge")
+   (ef-test-execute ",hoge" ", hoge")
+   (ef-test-execute ")hoge" ")hoge")
 
-   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n,hoge")
-   (electric-formatter-test-execute ",hoge" ", hoge" ",hoge\n" nil)
+   (ef-test-execute ",hoge" ", hoge" nil "\n,hoge")
+   (ef-test-execute ",hoge" ", hoge" ",hoge\n" nil)
 
-   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n\",hoge\"")
-   (electric-formatter-test-execute ",hoge" ", hoge" nil "\",hoge\"")
-   (electric-formatter-test-execute ",hoge" ", hoge" "\",hoge\"\n" nil)
-   (electric-formatter-test-execute ",hoge" ", hoge" "\",hoge\"" nil)
-   (electric-formatter-test-execute ",hoge" ", hoge"
+   (ef-test-execute ",hoge" ", hoge" nil "\n\",hoge\"")
+   (ef-test-execute ",hoge" ", hoge" nil "\",hoge\"")
+   (ef-test-execute ",hoge" ", hoge" "\",hoge\"\n" nil)
+   (ef-test-execute ",hoge" ", hoge" "\",hoge\"" nil)
+   (ef-test-execute ",hoge" ", hoge"
                                     "\",hoge\"\n" "\",hoge\"\n")
 
-   (electric-formatter-test-execute ",hoge" ", hoge" nil "\n;,hoge")
-   (electric-formatter-test-execute ",hoge" ", hoge" nil ";,hoge")
-   (electric-formatter-test-execute ",hoge" ", hoge" ";,hoge\n" nil)
-   (electric-formatter-test-execute ",hoge" ", hoge" ";,hoge\n" ";,hoge")
-   ;;(electric-formatter-test-execute ",hoge" ", hoge" ";,hoge" nil)
+   (ef-test-execute ",hoge" ", hoge" nil "\n;,hoge")
+   (ef-test-execute ",hoge" ", hoge" nil ";,hoge")
+   (ef-test-execute ",hoge" ", hoge" ";,hoge\n" nil)
+   (ef-test-execute ",hoge" ", hoge" ";,hoge\n" ";,hoge")
+   ;;(ef-test-execute ",hoge" ", hoge" ";,hoge" nil)
 
    ;;end of region
-   (electric-formatter-test-region "1,2" "1, 2" (- (point-max) 1))
+   (ef-test-region "1,2" "1, 2" (- (point-max) 1))
    ;;beginnig of region
-   (electric-formatter-test-region "1,2" "1, 2" (+ (point-min) 1))
+   (ef-test-region "1,2" "1, 2" (+ (point-min) 1))
    ;;above region
-   (electric-formatter-test-region "1,2" "1, 2" (point-min))
+   (ef-test-region "1,2" "1, 2" (point-min))
    ;;below region
-   (electric-formatter-test-region "1,2" "1, 2" (point-max))
+   (ef-test-region "1,2" "1, 2" (point-max))
    ;;inside region
-   (electric-formatter-test-region "1,2" "1, 2" (+ (point-min) 2))
-   (electric-formatter-test-region "\n\n" "\n"  (+ (point-min) 2))
-   (electric-formatter-test-region "\n\n\n" "\n"(+ (point-min) 2))
+   (ef-test-region "1,2" "1, 2" (+ (point-min) 2))
+   (ef-test-region "\n\n" "\n"  (+ (point-min) 2))
+   (ef-test-region "\n\n\n" "\n"(+ (point-min) 2))
    ))
 
-(ert-deftest electric-formatter-in-elisp ()
+(ert-deftest ef-in-elisp ()
   (ert-with-test-buffer (:name "electric-formatter")
    (emacs-lisp-mode)
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   ;;(should (eq (length electric-formatter-list) 6))
-   (electric-formatter-test-execute "a" "a")
+   ;;(should (eq (length ef-rule-list) 6))
+   (ef-test-execute "a" "a")
    ;;(electric-pair-mode 1)
-   (electric-formatter-test-execute ")hoge" ") hoge")
-   (electric-formatter-test-execute "hoge(" "hoge (")
+   (ef-test-execute ")hoge" ") hoge")
+   (ef-test-execute "hoge(" "hoge (")
 
-   (electric-formatter-test-execute ")(" ") (")
-   (electric-formatter-test-execute ")`(" ") `(")
+   (ef-test-execute ")(" ") (")
+   (ef-test-execute ")`(" ") `(")
 
-   (electric-formatter-test-execute "),(" ") ,(")
-   (electric-formatter-test-execute ")\"" ") \"")
-   (electric-formatter-test-execute "a\"" "a \"")
+   (ef-test-execute "),(" ") ,(")
+   (ef-test-execute ")\"" ") \"")
+   (ef-test-execute "a\"" "a \"")
 
-   (electric-formatter-test-execute "a." "a .")
-   (electric-formatter-test-execute ".a" ". a")
+   (ef-test-execute "a." "a .")
+   (ef-test-execute ".a" ". a")
 
-   (electric-formatter-test-execute "\"a\"a" "\"a\" a")
-   (electric-formatter-test-execute "\"a\"a" "\"a\" a" "\n")
+   (ef-test-execute "\"a\"a" "\"a\" a")
+   (ef-test-execute "\"a\"a" "\"a\" a" "\n")
 
-   (electric-formatter-test-execute "\"\"a" "\"\" a")
-   (electric-formatter-test-execute "\"\"a" "\"\" a" "\n" nil)
-   (electric-formatter-test-execute "\"\"a" "\"\" a" nil "\n")
-   ;;(electric-formatter-test-execute "\"\"(" "\"\" (")
-   (electric-formatter-test-region ") )" "))"(+ (point-min) 2))
-   (electric-formatter-test-region ") \n \n )" "))"(+ (point-min) 2))
+   (ef-test-execute "\"\"a" "\"\" a")
+   (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
+   (ef-test-execute "\"\"a" "\"\" a" nil "\n")
+   ;;(ef-test-execute "\"\"(" "\"\" (")
+   (ef-test-region ") )" "))"(+ (point-min) 2))
+   (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
 
-(ert-deftest electric-formatter-in-ruby ()
+(ert-deftest ef-in-ruby ()
   (ert-with-test-buffer (:name "electric-formatter")
    (ruby-mode)
    (electric-formatter-mode 1)
 
    (should electric-formatter-mode)
-   ;;(should (eq (length electric-formatter-list) 6))
-   (electric-formatter-test-execute "a=b" "a = b")
-   (electric-formatter-test-execute "a===b" "a === b")
-   (electric-formatter-test-execute "a===:b" "a === :b")
-   (electric-formatter-test-execute ":a===:b" ":a === :b")
+   ;;(should (eq (length ef-rule-list) 6))
+   (ef-test-execute "a=b" "a = b")
+   (ef-test-execute "a===b" "a === b")
+   (ef-test-execute "a===:b" "a === :b")
+   (ef-test-execute ":a===:b" ":a === :b")
 
-   (electric-formatter-test-execute "a=>b" "a => b")
-   (electric-formatter-test-execute "a<=b" "a <= b")
-   (electric-formatter-test-execute "a<=>b" "a <=> b")
-   (electric-formatter-test-execute "a&&b" "a && b")
-   (electric-formatter-test-execute "a||b" "a || b")
-   (electric-formatter-test-execute "a and b" "a && b")
-   (electric-formatter-test-execute "a or b" "a || b")
+   (ef-test-execute "a=>b" "a => b")
+   (ef-test-execute "a<=b" "a <= b")
+   (ef-test-execute "a<=>b" "a <=> b")
+   (ef-test-execute "a&&b" "a && b")
+   (ef-test-execute "a||b" "a || b")
+   (ef-test-execute "a and b" "a && b")
+   (ef-test-execute "a or b" "a || b")
    ))
 
-(ert-deftest electric-formatter-in-org ()
+(ert-deftest ef-in-org ()
   (ert-with-test-buffer (:name "electric-formatter")
     (org-mode)
     (electric-formatter-mode 1)
 
     (should electric-formatter-mode)
 
-    (electric-formatter-test-execute "あaあ" "あ a あ")
-    (electric-formatter-test-execute "aあa" "a あ a")
+    (ef-test-execute "あaあ" "あ a あ")
+    (ef-test-execute "aあa" "a あ a")
     ))
 
 (ert-run-tests-interactively t)
