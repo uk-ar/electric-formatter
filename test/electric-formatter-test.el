@@ -24,10 +24,30 @@
 ;;-------------------------------------------------------------------
 
 ;;; Commentary:
-(require 'electric-formatter)
+(require 'electric-formatter-config)
 (require 'ert)
 (require 'ert-x)
 ;;; Code:
+(ert-deftest ef-space-after ()
+  (should
+   (equal
+    (ef-rule-space-after "&" "=")
+    (cons (concat "\\([&=]\\)" ef-beginning-regexp) "\\1 \\2")
+    )))
+
+(ert-deftest ef-space-before ()
+  (should
+   (equal
+    (ef-rule-space-before "&" "=")
+    (cons (concat ef-end-regexp "\\([&=]\\)") "\\1 \\2")
+    )))
+
+(ert-deftest ef-comment ()
+  (should
+   (equal
+    (ef-format-1 "//a" (ef-rule-space-after "//" "/*"))
+    "// a")))
+
 (ert-deftest ef-comma ()
   (should
    (equal
@@ -85,6 +105,13 @@
     (ef-format-1 "あa" '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
                                   . "\\1 \\2"))
     "あ a")))
+
+;; (ert-deftest ef-inside-paren ()
+;;   (should
+;;    (equal
+;;     (ef-format-1 "(bar = 'bar',baz = []):"
+;;                  '("\\((.*\\)[\t ]+\\(=\\)" . "\\1\\2"))
+;;     "(bar='bar',baz=[]):")))
 
 (ert-deftest ef-regexp-space-after ()
   (should
@@ -172,6 +199,23 @@
                     ,expect))
      (should (equal (point) , point))))
 
+(ert-deftest ef-mode ()
+  (ert-with-test-buffer (:name "electric-formatter")
+    ;;default is on
+    (should electric-formatter-mode)
+    (should (memq 'electric-formatter-electric post-self-insert-hook))
+    ;;turn off
+    (electric-formatter-mode -1)
+    (should-not electric-formatter-mode)
+    (should-not (memq 'electric-formatter-electric post-self-insert-hook))
+    ;;turn on
+    (electric-formatter-mode 1)
+    (should electric-formatter-mode)
+    (should (memq 'electric-formatter-electric post-self-insert-hook))
+
+    (should (< 2 (length ef-rule-list)))
+    ))
+
 (ert-deftest ef-in-default ()
   (ert-with-test-buffer (:name "electric-formatter")
    (electric-formatter-mode 1)
@@ -241,6 +285,8 @@
    (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
    (ef-test-execute "\"\"a" "\"\" a" nil "\n")
    ;;(ef-test-execute "\"\"(" "\"\" (")
+   (ef-test-execute ";a" "; a")
+   (ef-test-execute ";;a" ";; a")
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
@@ -264,7 +310,34 @@
    (ef-test-execute "a||b" "a || b")
    (ef-test-execute "a and b" "a && b")
    (ef-test-execute "a or b" "a || b")
+   (ef-test-execute "#a" "# a")
+   (ef-test-execute "##a" "## a")
    ))
+
+(ert-deftest ef-in-python ()
+  (ert-with-test-buffer (:name "electric-formatter")
+    (python-mode)
+    (electric-formatter-mode 1)
+
+    (should electric-formatter-mode)
+    ;;(should (eq (length ef-rule-list) 6))
+    (ef-test-execute "a=b" "a = b")
+    ;; (ef-test-execute "def foo(bar = 'bar',baz = []):"
+    ;;                  "def foo(bar='bar',baz=[]):")
+    ))
+
+(ert-deftest ef-in-c ()
+  (ert-with-test-buffer (:name "electric-formatter")
+    (c-mode)
+    (should electric-formatter-mode)
+    ;;(should (eq (length ef-rule-list) 6))
+    ;;must use parse-partial-sexp
+    (ef-test-execute "//a" "// a")
+    (ef-test-execute "/*a*/" "/* a*/")
+    ;; (ef-test-execute "a<b" "a < b")
+    ;; (ef-test-execute "#include < fo
+    ;; (ef-test-execute "#include < foo.h >" "#include <foo.h>")
+    ))
 
 (ert-deftest ef-in-org ()
   (ert-with-test-buffer (:name "electric-formatter")

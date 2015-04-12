@@ -28,62 +28,99 @@
 ;;; Code:
 (require 'electric-formatter)
 
-;;; Setting:
+(defun ef-rule-space-after (&rest strings)
+  (cons
+   (concat "\\(" (regexp-opt strings) "\\)" ef-beginning-regexp)
+   "\\1 \\2"))
+
+(defun ef-rule-space-before (&rest strings)
+  (cons
+   (concat ef-end-regexp "\\(" (regexp-opt strings) "\\)")
+   "\\1 \\2"))
+
+ ;;; Setting:
 (defvar ef-text-mode-rule-list
-  `(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-    ("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
-    ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2")
-    (,(concat "\\(,\\)" ef-beginning-regexp) . "\\1 \\2")))
+  (list
+   '("\n[\n]+" . "\n\n");;Two blank lines to one blank line
+   '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
+   '("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2")
+   (ef-rule-space-after ",")
+   ))
 
 (defvar ef-prog-mode-rule-list
-  `(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-    (space-after . "=")
-    (space-after . ",")
-    (space-after . ">")
-    (space-after . "<")
-    (space-after . "&")
-    (space-after . "|")
-
-    (space-before . "=")
-    (space-before . ">")
-    (space-before . "<")
-    (space-before . "&")
-    (space-before . "|")
-    ;;(,(concat "\\(\\s.\\)" ef-beginning-regexp) . "\\1 \\2")
-    ;;(,(concat ef-end-regexp "\\(\\s.\\)") . "\\1 \\2")
-    ))
+  (list
+   '("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
+   (ef-rule-space-after  "=" ">" "<" "&" "|" ",")
+   (ef-rule-space-before "=" ">" "<" "&" "|")
+   ;; Don't use syntax table because punctuations include ","
+   ;;(cons (concat ef-end-regexp "\\(\\s.\\)") "\\1 \\2")
+   ))
 
 (defvar ef-ruby-mode-rule-list
-  (append ef-prog-mode-rule-list
-          ;;advanced
-          '(("\\_<and\\_>" . "&&")
-            ("\\_<or\\_>" . "||"))))
+  (list
+   ;;advanced
+   '("\\_<and\\_>" . "&&")
+   '("\\_<or\\_>" . "||")))
+
+(defvar ef-python-mode-rule-list
+  (list
+   ;;for default param
+   (cons "\\((.*\\)[\t ]+\\(=\\)" "\\1\\2")
+   ))
+
+(defvar ef-c-mode-rule-list
+  (list
+   ;;for #include <foo.h>
+   (cons (concat "\\(<\\) " ef-beginning-regexp) "\\1\\2")
+   ;;(concat ef-end-regexp "\\(" (regexp-opt strings) "\\)")
+   ))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
 (defvar ef-emacs-lisp-mode-rule-list
-  (append ef-prog-mode-rule-list
-          '((space-after . ")")
-            (space-after . "\"")
-            (space-after . ".")
-
-            (space-before . "(")
-            (space-before . "\"")
-            (space-before . ".")
-            ;;advanced
-            (")[\n\t ]+)" . "))")
-            )))
+  (list
+   (ef-rule-space-after  ")" "\"" ".")
+   (ef-rule-space-before "(" "\"" ".")
+   ;;advanced
+   '(")[\n\t ]+)" . "))")
+   ))
 
 (setq-default ef-rule-list ef-prog-mode-rule-list)
+
+(setq-default
+ ef-comment-rule-list
+ (list
+  (cons (concat "\\(" "\\s<" "\\)" ef-beginning-regexp) "\\1 \\2")
+  ))
+
 (global-electric-formatter-mode 1)
 
 (defun ef-ruby-mode-setup()
-  (setq ef-rule-list ef-ruby-mode-rule-list))
+  (setq ef-rule-list
+        (append ef-prog-mode-rule-list ef-ruby-mode-rule-list)))
 
 (defun ef-text-mode-setup()
   (setq ef-rule-list ef-text-mode-rule-list))
 
 (defun ef-emacs-lisp-mode-setup()
-  (setq ef-rule-list ef-emacs-lisp-mode-rule-list))
+  (setq ef-rule-list
+        (append ef-prog-mode-rule-list ef-emacs-lisp-mode-rule-list)))
+
+(defun ef-python-mode-setup()
+  (setq ef-rule-list
+        (append ef-prog-mode-rule-list ef-python-mode-rule-list)))
+
+(defun ef-c-mode-setup()
+  (setq ef-rule-list
+        (append ef-prog-mode-rule-list ef-c-mode-rule-list))
+  (setq ef-comment-rule-list
+        (list
+         (ef-rule-space-after  "//" "/*"))))
+
+(add-hook 'c-mode-common-hook
+          'ef-c-mode-setup)
+
+(add-hook 'python-mode-hook
+          'ef-python-mode-setup)
 
 (add-hook 'emacs-lisp-mode-hook
           'ef-emacs-lisp-mode-setup)

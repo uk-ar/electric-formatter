@@ -38,6 +38,9 @@
 (defvar ef-rule-list nil)
 (make-variable-buffer-local 'ef-rule-list)
 
+(defvar ef-comment-rule-list nil)
+(make-variable-buffer-local 'ef-comment-rule-list)
+
 (defun ef-regexp (formatter-list symbol)
   (let ((strings
          (mapcar 'cdr
@@ -73,11 +76,11 @@
         (stringp (car elem)))
      formatter-list))))
 
-(defun ef-format (string)
+(defun ef-format (string rule-list)
   (cl-reduce #'ef-format-1
           (cons
            string
-           (ef-regexp-opt ef-rule-list))))
+           (ef-regexp-opt rule-list))))
 
 (defun ef-format-1 (string rule)
   (replace-regexp-in-string (car rule) (cdr rule) string))
@@ -88,11 +91,11 @@
   (electric-formatter-region
              (line-beginning-position) (point)))
 
-(defun ef-range (start end)
+(defun ef-range (start end rule-list)
   ;; must go to after inserted region
   ;; save-execursion cause bug
   (let* ((str (buffer-substring-no-properties start end))
-         (to-str (ef-format str)))
+         (to-str (ef-format str rule-list)))
     (unless (equal str to-str)
       (delete-region start end)
       (goto-char (min start end))
@@ -116,7 +119,17 @@
        ;; in comment
        ((nth 4 (syntax-ppss))
         ;;until comment end
-        (skip-syntax-forward "^>" (marker-position end-marker)))
+        (let ((pos (point)))
+          (skip-syntax-forward "^>" (marker-position end-marker))
+          (ef-range
+           (- pos 1);;-1 for forward-char
+           (point)
+           ;;(syntax-ppss)
+           ;;syntax-propertize-via-font-lock
+           ;; (+ (point)
+           ;;    (skip-syntax-forward
+           ;;     "\"<" (min (+ 1 (point)) end)))
+           ef-comment-rule-list)))
        (t
         (let ((pos (point))
               );(offset (save-excursion (skip-syntax-backward "\">" beg)))
@@ -126,8 +139,8 @@
            (- pos 1);;-1 for forward-char
            (+ (point)
               (skip-syntax-forward
-               "\"<" (min (+ 1 (point)) end))
-           ))))))
+               "\"<" (min (+ 1 (point)) end)))
+           ef-rule-list)))))
     (set-marker end-marker nil)
     (cons beg (point))))
 
