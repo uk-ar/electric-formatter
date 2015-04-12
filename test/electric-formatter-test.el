@@ -110,12 +110,34 @@
                                   . "\\1 \\2"))
     "あ a")))
 
-;; (ert-deftest ef-inside-paren ()
-;;   (should
-;;    (equal
-;;     (ef-format-1 "(bar = 'bar',baz = []):"
-;;                  '("\\((.*\\)[\t ]+\\(=\\)" . "\\1\\2"))
-;;     "(bar='bar',baz=[]):")))
+(ert-deftest ef-inside-paren ()
+  (should
+   (equal
+    (ef-format-1 "a(bar = 'bar',baz = []):"
+                 '("\\([(,][^(,]+\\)[\t ]+\\(=\\)" . "\\1\\2"))
+    "a(bar= 'bar',baz= []):"))
+  (should
+   (equal
+    (ef-format-1 "a(bar = 'bar',baz = []):"
+                 '("\\([(,][^(,]+\\)\\(=\\)[\t ]+" . "\\1\\2"))
+    "a(bar ='bar',baz =[]):"))
+  (should
+   (equal
+    (ef-format "def foo(bar = 'bar',baz = [],qux = 1):"
+               (list
+                (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
+                (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")))
+    "def foo(bar='bar',baz=[],qux=1):"))
+  (should
+   (equal
+    (ef-format ",baz = [],qux = 1):"
+               (list
+                (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
+                (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")))
+    ",baz=[],qux=1):"))
+  )
+
+;;bug in inside string
 
 (ert-deftest ef-regexp-space-after ()
   (should
@@ -293,6 +315,8 @@
    (ef-test-execute ";;a" ";; a")
    (ef-test-execute ";a" "; a" nil "\n")
    (ef-test-execute ";a" "; a" "\n" nil)
+
+   (ef-test-execute "\"a" "\"a")
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
@@ -308,6 +332,7 @@
    (ef-test-execute "a===b" "a === b")
    (ef-test-execute "a===:b" "a === :b")
    (ef-test-execute ":a===:b" ":a === :b")
+   (ef-test-execute "a=b;c=d" "a = b;c = d")
 
    (ef-test-execute "a=>b" "a => b")
    (ef-test-execute "a<=b" "a <= b")
@@ -328,8 +353,8 @@
     (should electric-formatter-mode)
     ;;(should (eq (length ef-rule-list) 6))
     (ef-test-execute "a=b" "a = b")
-    ;; (ef-test-execute "def foo(bar = 'bar',baz = []):"
-    ;;                  "def foo(bar='bar',baz=[]):")
+    (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
+                     "def foo(bar='bar', baz=[], qux=1):")
     ))
 
 (ert-deftest ef-in-c ()

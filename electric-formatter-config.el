@@ -65,7 +65,8 @@
 (defvar ef-python-mode-rule-list
   (list
    ;;for default param
-   (cons "\\((.*\\)[\t ]+\\(=\\)" "\\1\\2")
+   (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
+   (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")
    ))
 
 (defvar ef-c-mode-rule-list

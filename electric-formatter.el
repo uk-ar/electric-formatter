@@ -115,10 +115,11 @@
        ;; in string
        ((nth 3 (syntax-ppss))
         ;;until string end
-        (skip-syntax-forward "^\"" (marker-position end-marker))
+        (skip-syntax-forward "^\"|" (marker-position end-marker))
         ;;skip end of string
-        (unless (eobp) (forward-char 1))
-        )
+        (when (and (not (eobp))
+                   (< (point) (marker-position end-marker)))
+          (forward-char 1)))
        ;; in comment
        ((nth 4 (syntax-ppss))
         ;;until comment end
@@ -146,13 +147,13 @@
               (comment-search-forward (marker-position end-marker) t)
               (point))
             (save-excursion
-              (skip-syntax-forward "^\"" (marker-position end-marker))
+              (skip-syntax-forward "^\"|" (marker-position end-marker))
               (point))))
           (ef-range
            (if (= pos 1) 1 (- pos 1))
            (+ (point)
               (skip-syntax-forward
-               "\"<" (min (+ 1 (point)) end)))
+               "\"|" (min (+ 1 (point)) end)))
            ef-rule-list)))))
     (set-marker end-marker nil)
     (cons beg (point))))
