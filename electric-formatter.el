@@ -108,41 +108,71 @@
   (let ((beg (min beg end))
         (end-marker (set-marker (make-marker) (max beg end))))
     ;; parse forward because text inserted
-    (goto-char (- beg 1));;-1 for forward-char
+    ;;(goto-char (- beg 1));;-1 for forward-char
+    (goto-char beg);;-1 for forward-char
     (while (< (point) (marker-position end-marker))
-      (forward-char 1)
+      ;;(forward-char 1)
       (cond
        ;; in string
        ((nth 3 (syntax-ppss))
         ;;until string end
-        (skip-syntax-forward "^\"" (marker-position end-marker)))
+        (skip-syntax-forward "^\"" (marker-position end-marker))
+        ;;skip end of string
+        (unless (eobp) (forward-char 1))
+        ;;(forward-char 1)
+        )
        ;; in comment
        ((nth 4 (syntax-ppss))
         ;;until comment end
         (let ((pos (point)))
-          (skip-syntax-forward "^>" (marker-position end-marker))
+          ;; (goto-char
+          ;;  )
+          ;;(forward-whitespace (- (point-max)))
+          ;;(skip-syntax-forward "^>" (marker-position end-marker))
           (ef-range
-           (- pos 1);;-1 for forward-char
-           (point)
+           ;;(- pos 1);;-1 for forward-char
+           (comment-beginning)
+           (min
+            (save-excursion
+              (goto-char (comment-beginning))
+              (forward-comment 1) ;;(marker-position end-marker)
+              (point))
+            (marker-position end-marker))
+           ;;(point)
            ;;(syntax-ppss)
            ;;syntax-propertize-via-font-lock
            ;; (+ (point)
            ;;    (skip-syntax-forward
            ;;     "\"<" (min (+ 1 (point)) end)))
-           ef-comment-rule-list)))
+           ef-comment-rule-list)
+          ;;skip to next
+          (unless (eobp) (forward-char 1))
+          ))
        (t
         (let ((pos (point))
               );(offset (save-excursion (skip-syntax-backward "\">" beg)))
           ;;until comment or string start
-          (skip-syntax-forward "^\"<" (marker-position end-marker))
+          ;;(skip-syntax-forward "^\"<" (marker-position end-marker))
+          (goto-char
+           (min
+            (save-excursion
+              (comment-search-forward (marker-position end-marker) t)
+              (point))
+            (save-excursion
+              (skip-syntax-forward "^\"" (marker-position end-marker))
+              (point))))
           (ef-range
-           (- pos 1);;-1 for forward-char
+           (if (= pos 1) 1 (- pos 1))
+           ;;-1 for forward-char
            (+ (point)
               (skip-syntax-forward
                "\"<" (min (+ 1 (point)) end)))
            ef-rule-list)))))
     (set-marker end-marker nil)
     (cons beg (point))))
+
+;;(comment-search-forward (point-max))
+;;(forward-comment)
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)

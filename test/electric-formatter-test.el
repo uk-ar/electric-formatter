@@ -46,7 +46,11 @@
   (should
    (equal
     (ef-format-1 "//a" (ef-rule-space-after "//" "/*"))
-    "// a")))
+    "// a"))
+  (should
+   (equal
+    (ef-format-1 "/*a*/" (ef-rule-space-after "//" "/*"))
+    "/* a*/")))
 
 (ert-deftest ef-comma ()
   (should
@@ -252,8 +256,8 @@
    (ef-test-region "1,2" "1, 2" (point-max))
    ;;inside region
    (ef-test-region "1,2" "1, 2" (+ (point-min) 2))
-   (ef-test-region "\n\n" "\n"  (+ (point-min) 2))
-   (ef-test-region "\n\n\n" "\n"(+ (point-min) 2))
+   (ef-test-region "a\n\na"   "a\n\na"  (+ (point-min) 2))
+   (ef-test-region "a\n\n\na" "a\n\na"(+ (point-min) 2))
    ))
 
 (ert-deftest ef-in-elisp ()
