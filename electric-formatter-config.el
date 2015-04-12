@@ -72,7 +72,9 @@
 (defvar ef-c-mode-rule-list
   (list
    ;;for #include <foo.h>
-   (cons (concat "\\(<\\) " ef-beginning-regexp) "\\1\\2")
+   (cons (concat "\\(#include[\t ]+<\\)[\t ]+" ef-beginning-regexp) "\\1\\2")
+   (cons (concat "\\(#include.*\\)[\t ]+\\(>\\)" ) "\\1\\2")
+   ;;https://github.com/xwl/electric-spacing/blob/master/electric-spacing.el
    ;;(concat ef-end-regexp "\\(" (regexp-opt strings) "\\)")
    ))
 

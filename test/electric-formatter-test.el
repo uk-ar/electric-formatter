@@ -365,9 +365,10 @@
     ;;must use parse-partial-sexp
     (ef-test-execute "//a" "// a")
     (ef-test-execute "/*a*/" "/* a*/")
-    ;; (ef-test-execute "a<b" "a < b")
-    ;; (ef-test-execute "#include < fo
-    ;; (ef-test-execute "#include < foo.h >" "#include <foo.h>")
+    (ef-test-execute "a<b" "a < b")
+    (ef-test-execute "a>b" "a > b")
+    (ef-test-execute "#include < foo.h >" "#include <foo.h>")
+    ;;(ef-test-execute "vector <  >" "vector <>")
     ))
 
 (ert-deftest ef-in-org ()
