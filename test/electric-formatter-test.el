@@ -288,9 +288,11 @@
    (ef-test-execute "\"\"a" "\"\" a")
    (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
    (ef-test-execute "\"\"a" "\"\" a" nil "\n")
-   ;;(ef-test-execute "\"\"(" "\"\" (")
+   ;;(ef-test-execute "\"\"(" "\"\" ("); ?
    (ef-test-execute ";a" "; a")
    (ef-test-execute ";;a" ";; a")
+   (ef-test-execute ";a" "; a" nil "\n")
+   (ef-test-execute ";a" "; a" "\n" nil)
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
