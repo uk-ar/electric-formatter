@@ -53,7 +53,9 @@
 
 ;;; Setting:
 ;; Including symbol(\\s_) for ruby's symbol :foo
-(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\)")
+;; Including *& for c's pointer operator
+(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|[*&]\\)")
+;;(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\)")
 (defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
 
 (defvar ef-text-mode-rule-list
@@ -68,8 +70,8 @@
   (list
    '("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
    ;; Don't use "&" because of poiter operator
-   (ef-rule-space-after  "=" ">" "<" "&" "|" ",")
-   (ef-rule-space-before "=" ">" "<" "&" "|")
+   (ef-rule-space-after  "=" ">" "<" "|" "&" "&&" "^" "%" ",")
+   (ef-rule-space-before "=" ">" "<" "|" "&" "&&" "^" "%")
    ;; Don't use syntax table because punctuations include ","
    ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
    ))
@@ -103,6 +105,9 @@
      (ef-rule-delete-space (concat keyword-regexp "[^;\n]+")
                            ">")
      (ef-rule-delete-space "->" ef-beginning-regexp)
+     ;;(equal "b =& a" "b = &a")
+     ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
+     ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
      ;;tertiary operator
      (ef-rule-space-before "?" ":")
      (ef-rule-space-after  "?" ":")
@@ -150,7 +155,15 @@
         (append ef-prog-mode-rule-list ef-c-mode-rule-list))
   (setq ef-comment-rule-list
         (list
-         (ef-rule-space-after  "//" "/*"))))
+         (ef-rule-space-after  "//" "/*")
+         (ef-rule-space-before "*/")
+         ))
+  (make-local-variable 'ef-beginning-regexp)
+  ;; Cannot effect
+  ;; (setq ef-beginning-regexp
+  ;;       (concat "\\(?:" ef-beginning-regexp
+  ;;               "\\|"   (regexp-opt '("&" "*")) "\\)"))
+  )
 
 (add-hook 'c-mode-common-hook
           'ef-c-mode-setup)
