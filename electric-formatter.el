@@ -50,10 +50,6 @@
     (if strings
         (regexp-opt strings t))))
 
-;; Including symbol(\\s_) for ruby's symbol :foo
-(defvar ef-beginning-regexp "\\(\\w\\|\\s'\\|\\s\"\\|\\s_\\)")
-(defvar ef-end-regexp "\\(\\w\\|\\s)\\|s\"\\)")
-
 (defun ef-regexp-opt (formatter-list)
   (delq
    nil

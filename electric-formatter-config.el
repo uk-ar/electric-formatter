@@ -28,17 +28,34 @@
 ;;; Code:
 (require 'electric-formatter)
 
-(defun ef-rule-space-after (&rest strings)
+(defun ef-rule-space-after-regexp (regexp)
   (cons
-   (concat "\\(" (regexp-opt strings) "\\)" ef-beginning-regexp)
+   (concat "\\(" regexp "\\)" "\\(" ef-beginning-regexp "\\)")
+   "\\1 \\2"))
+
+(defun ef-rule-space-after (&rest strings)
+  (ef-rule-space-after-regexp (regexp-opt strings)))
+
+(defun ef-rule-space-before-regexp (regexp)
+  (cons
+   (concat "\\(" ef-end-regexp "\\)" "\\(" regexp "\\)")
    "\\1 \\2"))
 
 (defun ef-rule-space-before (&rest strings)
-  (cons
-   (concat ef-end-regexp "\\(" (regexp-opt strings) "\\)")
-   "\\1 \\2"))
+  (ef-rule-space-before-regexp (regexp-opt strings)))
 
- ;;; Setting:
+;; todo ef-rule-space-around
+
+(defun ef-rule-delete-space (pre-regexp post-regexp)
+  (cons
+   (concat "\\(" pre-regexp "\\)" "[\t ]+" "\\(" post-regexp "\\)")
+   "\\1\\2"))
+
+;;; Setting:
+;; Including symbol(\\s_) for ruby's symbol :foo
+(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\)")
+(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
+
 (defvar ef-text-mode-rule-list
   (list
    '("\n[\n]+" . "\n\n");;Two blank lines to one blank line
@@ -50,40 +67,55 @@
 (defvar ef-prog-mode-rule-list
   (list
    '("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
+   ;; Don't use "&" because of poiter operator
    (ef-rule-space-after  "=" ">" "<" "&" "|" ",")
    (ef-rule-space-before "=" ">" "<" "&" "|")
    ;; Don't use syntax table because punctuations include ","
-   ;;(cons (concat ef-end-regexp "\\(\\s.\\)") "\\1 \\2")
+   ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
    ))
 
 (defvar ef-ruby-mode-rule-list
   (list
-   ;;advanced
+   ;; advanced
+   ;; convert keyword
    '("\\_<and\\_>" . "&&")
    '("\\_<or\\_>" . "||")))
 
 (defvar ef-python-mode-rule-list
   (list
-   ;;for default param
-   (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
-   (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")
+   ;;delete space for default param: foo(a=b)
+   (ef-rule-delete-space "[(,][^(,]+" ef-beginning-regexp)
+   (ef-rule-delete-space "[(,][^(,]+" "=")
    ))
 
 (defvar ef-c-mode-rule-list
-  (list
-   ;;for #include <foo.h>
-   (cons (concat "\\(#include[\t ]+<\\)[\t ]+" ef-beginning-regexp) "\\1\\2")
-   (cons (concat "\\(#include.*\\)[\t ]+\\(>\\)" ) "\\1\\2")
-   ;;https://github.com/xwl/electric-spacing/blob/master/electric-spacing.el
-   ;;(concat ef-end-regexp "\\(" (regexp-opt strings) "\\)")
-   ))
+  ;;copy keyword from electric-spacing
+  ;;https://github.com/xwl/electric-spacing/blob/master/electric-spacing.el#L17
+  (let ((keyword-regexp
+         (regexp-opt '("#include" "vector" "deque" "list" "map" "stack"
+                       "multimap" "set" "hash_map" "iterator" "template"
+                       "pair" "auto_ptr" "static_cast" "dynmaic_cast"
+                       "const_cast" "reintepret_cast" "#import"))))
+    (list
+     ;;delete space for keyword :#include <foo.h>
+     (ef-rule-delete-space (concat keyword-regexp "[\t ]+<")
+                           ef-beginning-regexp)
+     (ef-rule-delete-space (concat keyword-regexp "[^;\n]+")
+                           ">")
+     (ef-rule-delete-space "->" ef-beginning-regexp)
+     ;;tertiary operator
+     (ef-rule-space-before "?" ":")
+     (ef-rule-space-after  "?" ":")
+     )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
 (defvar ef-emacs-lisp-mode-rule-list
   (list
    (ef-rule-space-after  ")" "\"" ".")
    (ef-rule-space-before "(" "\"" ".")
+   (ef-rule-delete-space "," "(")
    ;;advanced
+   ;;delete space trailing whitespaces :)\n)
    '(")[\n\t ]+)" . "))")
    ))
 
@@ -92,7 +124,8 @@
 (setq-default
  ef-comment-rule-list
  (list
-  (cons (concat "\\(" "\\s<" "\\)" ef-beginning-regexp) "\\1 \\2")
+  ;;Space after single comment
+  (ef-rule-space-after-regexp "\\s<")
   ))
 
 (global-electric-formatter-mode 1)

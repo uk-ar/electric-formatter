@@ -28,19 +28,19 @@
 (require 'ert)
 (require 'ert-x)
 ;;; Code:
-(ert-deftest ef-space-after ()
-  (should
-   (equal
-    (ef-rule-space-after "&" "=")
-    (cons (concat "\\([&=]\\)" ef-beginning-regexp) "\\1 \\2")
-    )))
+;; (ert-deftest ef-space-after ()
+;;   (should
+;;    (equal
+;;     (ef-rule-space-after "&" "=")
+;;     (cons (concat "\\([&=]\\)" ef-beginning-regexp) "\\1 \\2")
+;;     )))
 
-(ert-deftest ef-space-before ()
-  (should
-   (equal
-    (ef-rule-space-before "&" "=")
-    (cons (concat ef-end-regexp "\\([&=]\\)") "\\1 \\2")
-    )))
+;; (ert-deftest ef-space-before ()
+;;   (should
+;;    (equal
+;;     (ef-rule-space-before "&" "=")
+;;     (cons (concat ef-end-regexp "\\([&=]\\)") "\\1 \\2")
+;;     )))
 
 (ert-deftest ef-comment ()
   (should
@@ -367,8 +367,28 @@
     (ef-test-execute "/*a*/" "/* a*/")
     (ef-test-execute "a<b" "a < b")
     (ef-test-execute "a>b" "a > b")
+    (ef-test-execute "a[b]" "a[b]")
+    (ef-test-execute "a(b)" "a(b)")
+    (ef-test-execute "a.b" "a.b")
+    (ef-test-execute "a++" "a++")
+    (ef-test-execute "a--" "a--")
+
+    (ef-test-execute "int *a" "int *a")
+    (ef-test-execute "*a" "*a")
+    (ef-test-execute "int **a" "int **a")
+    (ef-test-execute "b&a" "b & a")
+    (ef-test-execute "b()&a" "b() & a")
+    ;;(ef-test-execute "b=&a" "b = &a")
+    (ef-test-execute "+a" "+a")
+    (ef-test-execute "-a" "-a")
+    (ef-test-execute "~a" "~a")
+    (ef-test-execute "!a" "!a")
+
+    (ef-test-execute "a?b:c" "a ? b : c")
+    (ef-test-execute "a->b" "a->b")
     (ef-test-execute "#include < foo.h >" "#include <foo.h>")
-    ;;(ef-test-execute "vector <  >" "vector <>")
+    (ef-test-execute "vector < int > v1;deque < int > v2;"
+                     "vector <int> v1;deque <int> v2;")
     ))
 
 (ert-deftest ef-in-org ()
