@@ -1,4 +1,4 @@
-;;; electric-formatter.el --- Realtime code formatter which independent of programming language.
+;;; electric-formatter.el --- Realtime code formatter which independent of programming language. -*- lexical-binding: t -*-
 
 ;;-------------------------------------------------------------------
 ;;
@@ -100,81 +100,36 @@
       ;;(save-excursion)
       )))
 
-(defun electric-formatter-region-1 (beg end)
-  (let ((beg (min beg end))
-        (end-marker (set-marker (make-marker) (max beg end))))
-    ;; parse forward because text inserted
-    (goto-char beg)
-    (while (< (point) (marker-position end-marker))
-      ;; Not to start (forward-char 1) for start with comment
+;;(electric-formatter-region-1 '("\\w," . "\\1 ,"))
+;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
+(defun electric-formatter-region-1 (rule)
+  (save-excursion
+    (while (re-search-forward (car rule) nil t)
+      ;;(while (re-search-forward (car rule) end t)
       (cond
        ;; in string
-       ((nth 3 (syntax-ppss))
-        ;;until string end
-        (skip-syntax-forward "^\"|" (marker-position end-marker))
-        ;;skip end of string
-        (when (and (not (eobp))
-                   (< (point) (marker-position end-marker)))
-          (forward-char 1)))
+       ((nth 3 (syntax-ppss)));;nop
        ;; in comment
        ((nth 4 (syntax-ppss))
-        ;;until comment end
-        (let ((pos (point)))
-          (goto-char
-           (min
-            (save-excursion
-              (goto-char (comment-beginning))
-              (forward-comment 1)
-              (point))
-            (marker-position end-marker)))
-          (ef-range
-           (save-excursion
-             (goto-char pos)
-             (comment-beginning))
-           (point)
-           ef-comment-rule-list)
-          ))
+        (when (memql rule ef-comment-rule-list)
+          (replace-match (cdr rule) nil nil)))
        (t
-        (let ((pos (point)))
-          ;;until comment or string start
-          (goto-char
-           (min
-            (save-excursion
-              (comment-search-forward (marker-position end-marker) t)
-              (point))
-            (save-excursion
-              (skip-syntax-forward "^\"|" (marker-position end-marker))
-              (point))))
-          (ef-range
-           (if (= pos 1) 1 (- pos 1))
-           (+ (point)
-              (skip-syntax-forward
-               "\"|" (min (+ 1 (point)) end)))
-           ef-rule-list)))))
-    (set-marker end-marker nil)
-    (cons beg (point))))
+        (when (memql rule ef-rule-list)
+          (replace-match (cdr rule) nil nil)))))))
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)
   (interactive "r")
-  (let ((pos (point))
-        (eobp (eobp))
-        (pos-marker (set-marker (make-marker) (point)))
-        (beg (min beg end))
+  (let ((beg (min beg end))
         (end (max beg end)))
-    (electric-formatter-region-1 beg end)
-    ;;(electric-formatter-electric-1 beg end)
-    (cond
-     ((= beg pos)
-      (goto-char beg))
-     ((= end pos)) ;;nop
-     ((and (< beg pos) (< pos end))
-      (goto-char pos))
-     (eobp
-      (goto-char (point-max)))
-     (t
-      (goto-char (marker-position pos-marker))))
-    (set-marker pos-marker nil)))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region beg end)
+        (goto-char beg)
+        (mapc #'electric-formatter-region-1
+         (append ef-rule-list ef-comment-rule-list))
+        )
+      )))
 
 ;;;###autoload
 (defun electric-formatter-buffer ()

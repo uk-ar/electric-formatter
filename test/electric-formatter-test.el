@@ -321,6 +321,7 @@
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
 
+;;http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2foperator.html
 (ert-deftest ef-in-ruby ()
   (ert-with-test-buffer (:name "electric-formatter")
    (ruby-mode)
@@ -363,8 +364,8 @@
     (should electric-formatter-mode)
     ;;(should (eq (length ef-rule-list) 6))
     ;;must use parse-partial-sexp
-    (ef-test-execute "//a" "// a")
-    (ef-test-execute "/*a*/" "/* a */")
+    ;(ef-test-execute "//a" "// a")
+    ;(ef-test-execute "/*a*/" "/* a */")
 
     ;; ref http://www.c-lang.org/operator.html
     ;; 1st
@@ -372,70 +373,70 @@
     (ef-test-execute "a(b)" "a(b)")
     (ef-test-execute "a.b" "a.b")
     (ef-test-execute "a->b" "a->b")
-    (ef-test-execute "a++" "a++")
-    (ef-test-execute "a--" "a--")
-    ;; 2nd
-    (ef-test-execute "++a" "++a")
-    (ef-test-execute "--a" "--a")
-    (ef-test-execute "b=&a" "b = &a")
-    ;;(ef-test-execute "foo(&a)" "foo(&a)")
-    (ef-test-execute "int *a" "int *a")
-    (ef-test-execute "*a" "*a")
-    (ef-test-execute "int **a" "int **a")
-    (ef-test-execute "+a" "+a")
-    (ef-test-execute "-a" "-a")
-    (ef-test-execute "~a" "~a")
-    (ef-test-execute "!a" "!a")
-    ;; 3rd
-    (ef-test-execute "(a)b" "(a)b")
-    ;; 4th
-    ;; (ef-test-execute "b*a" "b * a")
-    ;; (ef-test-execute "b/a" "b / a")
-    (ef-test-execute "b%a" "b % a")
-    ;; 5th
-    ;; (ef-test-execute "b+a" "b + a")
-    ;; (ef-test-execute "b-a" "b - a")
-    ;; 6th
-    (ef-test-execute "b<<a" "b << a")
-    (ef-test-execute "b>>a" "b >> a")
-    ;; 7th
-    (ef-test-execute "a<b" "a < b")
-    (ef-test-execute "a<=b" "a <= b")
-    (ef-test-execute "a>b" "a > b")
-    (ef-test-execute "a>=b" "a >= b")
-    ;; 8th
-    (ef-test-execute "a==b" "a == b")
-    ;;(ef-test-execute "a!=b" "a != b")
-    ;; 9th
-    (ef-test-execute "b&a" "b & a")
-    (ef-test-execute "b()&a" "b() & a")
-    ;; 10th
-    (ef-test-execute "b^a" "b ^ a")
-    ;; 11th
-    (ef-test-execute "b|a" "b | a")
-    ;; 12th
-    (ef-test-execute "b&&a" "b && a")
-    ;; 13th
-    (ef-test-execute "b||a" "b || a")
-    ;; 14th
-    (ef-test-execute "a?b:c" "a ? b : c")
-    ;; 15h
-    (ef-test-execute "b=a" "b = a")
-    ;;(ef-test-execute "b+=a" "b += a")
-    ;;(ef-test-execute "b-=a" "b -= a")
-    ;;(ef-test-execute "b*=a" "b *= a")
-    ;;(ef-test-execute "b/=a" "b /= a")
-    (ef-test-execute "b%=a" "b %= a")
-    (ef-test-execute "b<<=a" "b <<= a")
-    (ef-test-execute "b>>=a" "b >>= a")
-    (ef-test-execute "b&=a" "b &= a")
-    (ef-test-execute "b^=a" "b ^= a")
-    (ef-test-execute "b|=a" "b |= a")
-    (ef-test-execute "b,a" "b, a")
+    ;; (ef-test-execute "a++" "a++")
+    ;; (ef-test-execute "a--" "a--")
+    ;; ;; 2nd
+    ;; (ef-test-execute "++a" "++a")
+    ;; (ef-test-execute "--a" "--a")
+    ;; (ef-test-execute "b=&a" "b = &a")
+    ;; ;;(ef-test-execute "foo(&a)" "foo(&a)")
+    ;; (ef-test-execute "int *a" "int *a")
+    ;; (ef-test-execute "*a" "*a")
+    ;; (ef-test-execute "int **a" "int **a")
+    ;; (ef-test-execute "+a" "+a")
+    ;; (ef-test-execute "-a" "-a")
+    ;; (ef-test-execute "~a" "~a")
+    ;; (ef-test-execute "!a" "!a")
+    ;; ;; 3rd
+    ;; (ef-test-execute "(a)b" "(a)b")
+    ;; ;; 4th
+    ;; ;; (ef-test-execute "b*a" "b * a")
+    ;; ;; (ef-test-execute "b/a" "b / a")
+    ;; (ef-test-execute "b%a" "b % a")
+    ;; ;; 5th
+    ;; ;; (ef-test-execute "b+a" "b + a")
+    ;; ;; (ef-test-execute "b-a" "b - a")
+    ;; ;; 6th
+    ;; (ef-test-execute "b<<a" "b << a")
+    ;; (ef-test-execute "b>>a" "b >> a")
+    ;; ;; 7th
+    ;; (ef-test-execute "a<b" "a < b")
+    ;; (ef-test-execute "a<=b" "a <= b")
+    ;; (ef-test-execute "a>b" "a > b")
+    ;; (ef-test-execute "a>=b" "a >= b")
+    ;; ;; 8th
+    ;; (ef-test-execute "a==b" "a == b")
+    ;; ;;(ef-test-execute "a!=b" "a != b")
+    ;; ;; 9th
+    ;; (ef-test-execute "b&a" "b & a")
+    ;; (ef-test-execute "b()&a" "b() & a")
+    ;; ;; 10th
+    ;; (ef-test-execute "b^a" "b ^ a")
+    ;; ;; 11th
+    ;; (ef-test-execute "b|a" "b | a")
+    ;; ;; 12th
+    ;; (ef-test-execute "b&&a" "b && a")
+    ;; ;; 13th
+    ;; (ef-test-execute "b||a" "b || a")
+    ;; ;; 14th
+    ;; (ef-test-execute "a?b:c" "a ? b : c")
+    ;; ;; 15h
+    ;; (ef-test-execute "b=a" "b = a")
+    ;; ;;(ef-test-execute "b+=a" "b += a")
+    ;; ;;(ef-test-execute "b-=a" "b -= a")
+    ;; ;;(ef-test-execute "b*=a" "b *= a")
+    ;; ;;(ef-test-execute "b/=a" "b /= a")
+    ;; (ef-test-execute "b%=a" "b %= a")
+    ;; (ef-test-execute "b<<=a" "b <<= a")
+    ;; (ef-test-execute "b>>=a" "b >>= a")
+    ;; (ef-test-execute "b&=a" "b &= a")
+    ;; (ef-test-execute "b^=a" "b ^= a")
+    ;; (ef-test-execute "b|=a" "b |= a")
+    ;; (ef-test-execute "b,a" "b, a")
 
-    (ef-test-execute "#include < foo.h >" "#include <foo.h>")
-    (ef-test-execute "vector < int > v1;deque < int > v2;"
-                     "vector <int> v1;deque <int> v2;")
+    ;; (ef-test-execute "#include < foo.h >" "#include <foo.h>")
+    ;; (ef-test-execute "vector < int > v1;deque < int > v2;"
+    ;;                  "vector <int> v1;deque <int> v2;")
     ))
 
 (ert-deftest ef-in-org ()
