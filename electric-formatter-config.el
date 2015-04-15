@@ -86,8 +86,8 @@
 (defvar ef-python-mode-rule-list
   (list
    ;;delete space for default param: foo(a=b)
-   (ef-rule-delete-space "[(,][^(,]+" ef-beginning-regexp)
-   (ef-rule-delete-space "[(,][^(,]+" "=")
+   ;;(ef-rule-delete-space "[(,][^(,]+" ef-beginning-regexp)
+   ;;(ef-rule-delete-space "[(,][^(,]+" "=")
    ))
 
 (defvar ef-c-mode-rule-list

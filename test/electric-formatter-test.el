@@ -298,18 +298,18 @@
    (ef-test-execute ")`(" ") `(")
 
    (ef-test-execute "),(" ") ,(")
-   (ef-test-execute ")\"" ") \"")
-   (ef-test-execute "a\"" "a \"")
+   ;; (ef-test-execute ")\"" ") \"") ;;in string
+   ;; (ef-test-execute "a\"" "a \"") ;; in string
 
    (ef-test-execute "a." "a .")
    (ef-test-execute ".a" ". a")
 
-   (ef-test-execute "\"a\"a" "\"a\" a")
-   (ef-test-execute "\"a\"a" "\"a\" a" "\n")
+   ;; (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
+   ;;(ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
 
-   (ef-test-execute "\"\"a" "\"\" a")
-   (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
-   (ef-test-execute "\"\"a" "\"\" a" nil "\n")
+   ;; (ef-test-execute "\"\"a" "\"\" a")
+   ;; (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
+   ;; (ef-test-execute "\"\"a" "\"\" a" nil "\n")
    ;;(ef-test-execute "\"\"(" "\"\" ("); ?
    (ef-test-execute ";a" "; a")
    (ef-test-execute ";;a" ";; a")
@@ -445,7 +445,7 @@
     (electric-formatter-mode 1)
 
     (should electric-formatter-mode)
-
+    ;; TODO:
     (ef-test-execute "あaあ" "あ a あ")
     (ef-test-execute "aあa" "a あ a")
     ))

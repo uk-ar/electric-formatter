@@ -104,32 +104,54 @@
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-1 (rule)
   (save-excursion
+    ;; Don't use re-search-forward because replace match moves point to beginnig of match
+    ;;(while (re-search-backward (car rule) nil t)
     (while (re-search-forward (car rule) nil t)
       ;;(while (re-search-forward (car rule) end t)
-      (cond
-       ;; in string
-       ((nth 3 (syntax-ppss)));;nop
-       ;; in comment
-       ((nth 4 (syntax-ppss))
-        (when (memql rule ef-comment-rule-list)
-          (replace-match (cdr rule) nil nil)))
-       (t
-        (when (memql rule ef-rule-list)
-          (replace-match (cdr rule) nil nil)))))))
+      (let ((ppss (syntax-ppss)
+                  ;; (save-excursion
+                  ;;   (goto-char (match-beginning 0))
+                  ;;   (syntax-ppss))
+                  ))
+        (cond
+         ;; in string
+         ((nth 3 ppss));;nop
+         ;; in comment
+         ((nth 4 ppss)
+          (when (memql rule ef-comment-rule-list)
+            (replace-match (cdr rule))))
+         (t
+          (when (memql rule ef-rule-list)
+            (replace-match (cdr rule)))))))))
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)
   (interactive "r")
-  (let ((beg (min beg end))
+  (let ((pos (point))
+        (eobp (eobp))
+        (pos-marker (set-marker (make-marker) (point)))
+        (beg (min beg end))
         (end (max beg end)))
     (save-excursion
       (save-restriction
         (narrow-to-region beg end)
         (goto-char beg)
         (mapc #'electric-formatter-region-1
-         (append ef-rule-list ef-comment-rule-list))
-        )
-      )))
+              (append ef-rule-list ef-comment-rule-list))))
+    ;;(electric-formatter-electric-1 beg end)
+    (cond
+     ((= beg pos)
+      (goto-char beg))
+     ((= end pos)) ;;nop
+     ((and (< beg pos) (< pos end))
+      (goto-char pos))
+     (eobp
+      (goto-char (point-max)))
+     ;; (t
+     ;;  (goto-char (marker-position pos-marker)))
+     )
+    ;; (set-marker pos-marker nil)
+    ))
 
 ;;;###autoload
 (defun electric-formatter-buffer ()
