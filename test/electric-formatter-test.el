@@ -103,12 +103,45 @@
     (ef-format-1 ") \n )" '(")[\n\t ]+)" . "))"))
     "))")))
 
+(defun ef-test-rules (str rules &optional mode)
+  (when mode (funcall mode))
+  (erase-buffer)
+  (save-excursion (insert str))
+  (electric-formatter-region-1
+   (point-min) (point-max)
+   (lambda (rule)
+     (replace-match (cdr rule)))
+   rules)
+  (substring-no-properties (buffer-string)))
+
 (ert-deftest ef-multibyte ()
+  (ert-with-test-buffer (:name "electric-formatter")
   (should
    (equal
-    (ef-format-1 "あa" '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
-                                  . "\\1 \\2"))
-    "あ a")))
+    (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+                              . "\\1 \\2")))
+    "あ aあ"))
+  (should
+   (equal
+    (ef-test-rules "あaあ" '(("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+                            . "\\1 \\2")))
+    "あa あ"))
+  (should
+   (equal
+    (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+                              . "\\1 \\2")
+                             ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+                              . "\\1 \\2")) 'org-mode)
+    "あ a あ"))
+  ))
+
+(ert-deftest ef--> ()
+  (ert-with-test-buffer (:name "electric-formatter")
+  (should
+   (equal
+    (ef-test-rules "a-> b"
+                   (list (ef-rule-delete-space "->" ef-beginning-regexp)))
+    "a->b"))))
 
 (ert-deftest ef-inside-paren ()
   (should
@@ -354,6 +387,8 @@
     (should electric-formatter-mode)
     ;;(should (eq (length ef-rule-list) 6))
     (ef-test-execute "a=b" "a = b")
+    ;; ok
+    ;; \\([(,][^(,]+=\\)[ \t]+\\(\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)\\)
     (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
                      "def foo(bar='bar', baz=[], qux=1):")
     ))
@@ -447,7 +482,15 @@
     (should electric-formatter-mode)
     ;; TODO:
     (ef-test-execute "あaあ" "あ a あ")
+    (ef-test-execute "あ a あ" "あ a あ")
+    (ef-test-execute "あ  a  あ" "あ  a  あ")
     (ef-test-execute "aあa" "a あ a")
     ))
 
+(mapc
+ 'kill-buffer
+ (remove-if-not
+  (lambda (buffer-name)
+    (when (string-match "*Test buffer" buffer-name) buffer-name))
+  (mapcar 'buffer-name (buffer-list))))
 (ert-run-tests-interactively t)

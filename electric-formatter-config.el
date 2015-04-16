@@ -52,17 +52,19 @@
    "\\1\\2"))
 
 ;;; Setting:
-;; Including symbol(\\s_) for ruby's symbol :foo
+;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator
-(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|[*&]\\)")
+;; Including | for pythons string "'"
+(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
 ;;(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\)")
 (defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
 
 (defvar ef-text-mode-rule-list
   (list
    '("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-   '("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)" . "\\1 \\2")
-   '("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)" . "\\1 \\2")
+   '("\\([[:multibyte:]]\\)[ ]?\\([[:unibyte:]]\\)" . "\\1 \\2")
+   '("\\([[:unibyte:]]\\)[ ]?\\([[:multibyte:]]\\)" . "\\1 \\2")
+   ;;https://github.com/zk-phi/electric-spacing
    (ef-rule-space-after ",")
    ))
 
@@ -86,8 +88,8 @@
 (defvar ef-python-mode-rule-list
   (list
    ;;delete space for default param: foo(a=b)
-   ;;(ef-rule-delete-space "[(,][^(,]+" ef-beginning-regexp)
-   ;;(ef-rule-delete-space "[(,][^(,]+" "=")
+   (ef-rule-delete-space "[(,][^(,]+" "=")
+   (ef-rule-delete-space "[(,][^(,]+=" ef-beginning-regexp)
    ))
 
 (defvar ef-c-mode-rule-list
@@ -158,7 +160,7 @@
          (ef-rule-space-after  "//" "/*")
          (ef-rule-space-before "*/")
          ))
-  (make-local-variable 'ef-beginning-regexp)
+  ;;(make-local-variable 'ef-beginning-regexp)
   ;; Cannot effect
   ;; (setq ef-beginning-regexp
   ;;       (concat "\\(?:" ef-beginning-regexp

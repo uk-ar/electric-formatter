@@ -102,27 +102,39 @@
 
 ;;(electric-formatter-region-1 '("\\w," . "\\1 ,"))
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
-(defun electric-formatter-region-1 (rule)
-  (save-excursion
-    ;; Don't use re-search-forward because replace match moves point to beginnig of match
-    ;;(while (re-search-backward (car rule) nil t)
-    (while (re-search-forward (car rule) nil t)
-      ;;(while (re-search-forward (car rule) end t)
-      (let ((ppss (syntax-ppss)
-                  ;; (save-excursion
-                  ;;   (goto-char (match-beginning 0))
-                  ;;   (syntax-ppss))
-                  ))
-        (cond
-         ;; in string
-         ((nth 3 ppss));;nop
-         ;; in comment
-         ((nth 4 ppss)
-          (when (memql rule ef-comment-rule-list)
-            (replace-match (cdr rule))))
-         (t
-          (when (memql rule ef-rule-list)
-            (replace-match (cdr rule)))))))))
+(defun electric-formatter-region-func (rule)
+  (let ((ppss
+         (save-match-data (syntax-ppss))
+         ;; (save-excursion
+         ;;   (goto-char (match-beginning 0))
+         ;;   (syntax-ppss))
+         ))
+    (cond
+     ;; in string
+     ((nth 3 ppss));;nop
+     ;; in comment
+     ((nth 4 ppss)
+      (when (memql rule ef-comment-rule-list)
+        (replace-match (cdr rule))))
+     (t
+      (when (memql rule ef-rule-list)
+        (replace-match (cdr rule)))))))
+
+(defun electric-formatter-region-1 (beg end func rules)
+  ;; point must be region beginning
+  (let ((end-marker (set-marker (make-marker) end)))
+    (mapc
+     (lambda (rule)
+       (save-excursion
+         (goto-char beg)
+         (while (and (< (point) (marker-position end-marker))
+                     (re-search-forward (car rule)
+                                        (marker-position end-marker) t))
+           (funcall func rule)
+           )))
+     rules)
+    (set-marker end-marker nil)
+    ))
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)
@@ -132,12 +144,11 @@
         (pos-marker (set-marker (make-marker) (point)))
         (beg (min beg end))
         (end (max beg end)))
-    (save-excursion
-      (save-restriction
-        (narrow-to-region beg end)
-        (goto-char beg)
-        (mapc #'electric-formatter-region-1
-              (append ef-rule-list ef-comment-rule-list))))
+    ;;end is moving
+    (electric-formatter-region-1
+     beg end
+     #'electric-formatter-region-func
+     (append ef-rule-list ef-comment-rule-list))
     ;;(electric-formatter-electric-1 beg end)
     (cond
      ((= beg pos)
