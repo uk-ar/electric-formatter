@@ -28,21 +28,26 @@
 ;;; Code:
 (require 'electric-formatter)
 
-(defun ef-rule-space-after-regexp (regexp)
+(defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
-   (concat "\\(" regexp "\\)" "\\(" ef-beginning-regexp "\\)")
+   (concat "\\(" pre-regexp "\\)" "\\(" post-regexp "\\)")
    "\\1 \\2"))
+
+;; (defun ef-rule-space-after-regexp (regexp)
+;;   (cons
+;;    (concat "\\(" regexp "\\)" "\\(" ef-beginning-regexp "\\)")
+;;    "\\1 \\2"))
 
 (defun ef-rule-space-after (&rest strings)
-  (ef-rule-space-after-regexp (regexp-opt strings)))
+  (ef-rule-space-between-regexp (regexp-opt strings) ef-beginning-regexp))
 
-(defun ef-rule-space-before-regexp (regexp)
-  (cons
-   (concat "\\(" ef-end-regexp "\\)" "\\(" regexp "\\)")
-   "\\1 \\2"))
+;; (defun ef-rule-space-before-regexp (regexp)
+;;   (cons
+;;    (concat "\\(" ef-end-regexp "\\)" "\\(" regexp "\\)")
+;;    "\\1 \\2"))
 
 (defun ef-rule-space-before (&rest strings)
-  (ef-rule-space-before-regexp (regexp-opt strings)))
+  (ef-rule-space-between-regexp ef-end-regexp (regexp-opt strings)))
 
 (defun ef-rule-space-around-regexp (regexp)
   (cons
@@ -131,7 +136,11 @@
 (defvar ef-emacs-lisp-mode-rule-list
   (list
    (ef-rule-space-after  ")" "\"" ".")
-   (ef-rule-space-before "("      ".")
+   (ef-rule-space-before "(" "\"" ".")
+   (ef-rule-space-between-regexp (regexp-opt '(")" "\"")) "\\(?:\\_<\\)")
+   (ef-rule-space-between-regexp (regexp-opt '(")")) "\"")
+   (ef-rule-space-between-regexp "\\(?:\\_>\\)" (regexp-opt '("(" "\"")))
+   (ef-rule-space-between-regexp "\"" (regexp-opt '("(")))
    (ef-rule-delete-space "," "(")
    ;;advanced
    ;;delete space trailing whitespaces :)\n)
