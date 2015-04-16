@@ -44,7 +44,18 @@
 (defun ef-rule-space-before (&rest strings)
   (ef-rule-space-before-regexp (regexp-opt strings)))
 
-;; todo ef-rule-space-around
+(defun ef-rule-space-around-regexp (regexp)
+  (cons
+   (concat "\\(" ef-end-regexp "\\)"
+           "\\(?:" "[ \t]?" "\\)"
+           "\\(" "[ \t]*" regexp "\\)"
+           "\\(?:" "[ \t]?" "\\)"
+           "\\(" "[ \t]*" ef-beginning-regexp "\\)")
+   "\\1 \\2 \\3"))
+;;(replace-regexp "\\(\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)\\)\\(?:[ \t]?\\)\\([ \t]*=\\)\\(?:[ \t]?\\)\\([ \t]*\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)\\)" "\\1 \\2 \\3")
+
+(defun ef-rule-space-around (&rest strings)
+  (ef-rule-space-around-regexp (regexp-opt strings)))
 
 (defun ef-rule-delete-space (pre-regexp post-regexp)
   (cons
@@ -55,9 +66,8 @@
 ;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator
 ;; Including | for pythons string "'"
-(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
-;;(defvar ef-beginning-regexp "\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\)")
-(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
+(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
+(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
 
 (defvar ef-text-mode-rule-list
   (list
@@ -74,6 +84,8 @@
    ;; Don't use "&" because of poiter operator
    (ef-rule-space-after  "=" ">" "<" "|" "&" "&&" "^" "%" ",")
    (ef-rule-space-before "=" ">" "<" "|" "&" "&&" "^" "%")
+   ;;Space after single comment(1st match)
+   (ef-rule-space-after-regexp "\\s<")
    ;; Don't use syntax table because punctuations include ","
    ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
    ))
@@ -133,6 +145,7 @@
  (list
   ;;Space after single comment
   (ef-rule-space-after-regexp "\\s<")
+  ;;(ef-rule-space-after-regexp "\\'")
   ))
 
 (global-electric-formatter-mode 1)

@@ -114,26 +114,47 @@
    rules)
   (substring-no-properties (buffer-string)))
 
+(ert-deftest ef-around ()
+  (ert-with-test-buffer (:name "electric-formatter")
+    (c-mode)
+    (should
+     (equal
+      (ef-test-rules "a=" (list (ef-rule-space-around "=")))
+      "a="))
+    (should
+     (equal
+      (ef-test-rules "a=b" (list (ef-rule-space-around "=")))
+      "a = b"))
+    (should
+     (equal
+      (ef-test-rules "a  =  b" (list (ef-rule-space-around "=")))
+      "a  =  b"))
+    (should
+     (equal
+      (ef-test-rules "a=b=c" (list (ef-rule-space-around "=")))
+      "a = b = c"))))
+
 (ert-deftest ef-multibyte ()
   (ert-with-test-buffer (:name "electric-formatter")
-  (should
-   (equal
-    (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
-                              . "\\1 \\2")))
-    "あ aあ"))
-  (should
-   (equal
-    (ef-test-rules "あaあ" '(("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
-                            . "\\1 \\2")))
-    "あa あ"))
-  (should
-   (equal
-    (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
-                              . "\\1 \\2")
-                             ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
-                              . "\\1 \\2")) 'org-mode)
-    "あ a あ"))
-  ))
+    (org-mode)
+    (should
+     (equal
+      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+                                . "\\1 \\2")))
+      "あ aあ"))
+    (should
+     (equal
+      (ef-test-rules "あaあ" '(("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+                                . "\\1 \\2")))
+      "あa あ"))
+    (should
+     (equal
+      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+                                . "\\1 \\2")
+                               ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+                                . "\\1 \\2")))
+      "あ a あ"))
+    ))
 
 (ert-deftest ef--> ()
   (ert-with-test-buffer (:name "electric-formatter")
@@ -331,25 +352,26 @@
    (ef-test-execute ")`(" ") `(")
 
    (ef-test-execute "),(" ") ,(")
-   ;; (ef-test-execute ")\"" ") \"") ;;in string
-   ;; (ef-test-execute "a\"" "a \"") ;; in string
+
+   (ef-test-execute ")\"" ") \"") ;;in string
+   (ef-test-execute "a\"" "a \"") ;; in string
+   (ef-test-execute "\"a" "\"a") ;; in string
 
    (ef-test-execute "a." "a .")
    (ef-test-execute ".a" ". a")
 
-   ;; (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
-   ;;(ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
+   (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
+   (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
 
    ;; (ef-test-execute "\"\"a" "\"\" a")
    ;; (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
    ;; (ef-test-execute "\"\"a" "\"\" a" nil "\n")
-   ;;(ef-test-execute "\"\"(" "\"\" ("); ?
+   ;; (ef-test-execute "\"\"(" "\"\" (")
    (ef-test-execute ";a" "; a")
    (ef-test-execute ";;a" ";; a")
    (ef-test-execute ";a" "; a" nil "\n")
    (ef-test-execute ";a" "; a" "\n" nil)
 
-   (ef-test-execute "\"a" "\"a")
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    ))
@@ -387,8 +409,7 @@
     (should electric-formatter-mode)
     ;;(should (eq (length ef-rule-list) 6))
     (ef-test-execute "a=b" "a = b")
-    ;; ok
-    ;; \\([(,][^(,]+=\\)[ \t]+\\(\\(?:\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)\\)
+    (ef-test-execute "a=b=c" "a = b = c")
     (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
                      "def foo(bar='bar', baz=[], qux=1):")
     ))
@@ -399,8 +420,8 @@
     (should electric-formatter-mode)
     ;;(should (eq (length ef-rule-list) 6))
     ;;must use parse-partial-sexp
-    ;(ef-test-execute "//a" "// a")
-    ;(ef-test-execute "/*a*/" "/* a */")
+    (ef-test-execute "//a" "// a")
+    (ef-test-execute "/*a*/" "/* a */")
 
     ;; ref http://www.c-lang.org/operator.html
     ;; 1st

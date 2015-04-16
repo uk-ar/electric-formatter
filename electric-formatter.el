@@ -104,14 +104,28 @@
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-func (rule)
   (let ((ppss
-         (save-match-data (syntax-ppss))
-         ;; (save-excursion
-         ;;   (goto-char (match-beginning 0))
-         ;;   (syntax-ppss))
-         ))
+         ;;match-end
+         (save-excursion
+           (save-match-data (syntax-ppss (match-end 1)))))
+        ;; (left-ppss
+        ;;  (save-match-data
+        ;;    (save-excursion
+        ;;      (goto-char (- (match-end 0) 1))
+        ;;      (syntax-ppss))
+        ;;    ))
+        )
     (cond
      ;; in string
-     ((nth 3 ppss));;nop
+     ((and (nth 3 ppss)
+           ;; (nth 3 left-ppss)
+           )
+      ;; (when (and (not (nth 3 beginning-ppss))
+      ;;            (not (nth 4 beginning-ppss))
+      ;;            (memql rule ef-rule-list))
+      ;;   (replace-match (cdr rule))
+      ;;   )
+      ;;nop
+      )
      ;; in comment
      ((nth 4 ppss)
       (when (memql rule ef-comment-rule-list)
