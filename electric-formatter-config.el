@@ -131,7 +131,7 @@
 (defvar ef-emacs-lisp-mode-rule-list
   (list
    (ef-rule-space-after  ")" "\"" ".")
-   (ef-rule-space-before "(" "\"" ".")
+   (ef-rule-space-before "("      ".")
    (ef-rule-delete-space "," "(")
    ;;advanced
    ;;delete space trailing whitespaces :)\n)

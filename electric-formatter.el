@@ -105,27 +105,23 @@
 (defun electric-formatter-region-func (rule)
   (let ((ppss
          ;;match-end
-         (save-excursion
-           (save-match-data (syntax-ppss (match-end 1)))))
-        ;; (left-ppss
-        ;;  (save-match-data
-        ;;    (save-excursion
-        ;;      (goto-char (- (match-end 0) 1))
-        ;;      (syntax-ppss))
-        ;;    ))
-        )
+         (save-match-data
+           (save-excursion
+             (syntax-ppss (match-end 1)
+                          ;; (if (and (match-end 1)
+                          ;;          (match-string 2)
+                          ;;          (equal "" (match-string 2)))
+                          ;;     (+ 1 (match-end 1))
+                          ;;   )
+                          ;; (+
+                          ;; 1
+                          ;; ;; (if (and (match-string 2)
+                          ;; ;;          ) 1 0)
+                          ;; )
+                          )))))
     (cond
      ;; in string
-     ((and (nth 3 ppss)
-           ;; (nth 3 left-ppss)
-           )
-      ;; (when (and (not (nth 3 beginning-ppss))
-      ;;            (not (nth 4 beginning-ppss))
-      ;;            (memql rule ef-rule-list))
-      ;;   (replace-match (cdr rule))
-      ;;   )
-      ;;nop
-      )
+     ((and (nth 3 ppss)));;nop
      ;; in comment
      ((nth 4 ppss)
       (when (memql rule ef-comment-rule-list)
@@ -142,8 +138,10 @@
        (save-excursion
          (goto-char beg)
          (while (and (< (point) (marker-position end-marker))
-                     (re-search-forward (car rule)
-                                        (marker-position end-marker) t))
+                     (progn
+                       ;;(unless (eq beg (point)) (forward-char -1))
+                       (re-search-forward (car rule)
+                                          (marker-position end-marker) t)))
            (funcall func rule)
            )))
      rules)

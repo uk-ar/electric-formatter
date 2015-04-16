@@ -363,7 +363,7 @@
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
 
-   ;; (ef-test-execute "\"\"a" "\"\" a")
+   (ef-test-execute "\"\"a" "\"\" a")
    ;; (ef-test-execute "\"\"a" "\"\" a" "\n" nil)
    ;; (ef-test-execute "\"\"a" "\"\" a" nil "\n")
    ;; (ef-test-execute "\"\"(" "\"\" (")
