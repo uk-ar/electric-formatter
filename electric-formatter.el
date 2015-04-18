@@ -78,8 +78,8 @@
            string
            (ef-regexp-opt rule-list))))
 
-(defun ef-format-1 (string rule)
-  (replace-regexp-in-string (car rule) (cdr rule) string))
+;; (defun ef-format-1 (string rule)
+;;   (replace-regexp-in-string (car rule) (cdr rule) string))
 
 ;;hooked
 (defun electric-formatter-electric ()
@@ -102,7 +102,8 @@
 
 (defun ef-convert-rule (rule)
   (if (symbolp (car rule))
-      (apply (car rule) (cdr rule))
+      ;;(apply (car rule) (cdr rule))
+      (eval rule)
     rule));; regexp
 
 (defun ef-convert-rules (rules)

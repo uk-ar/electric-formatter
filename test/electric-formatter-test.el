@@ -42,69 +42,10 @@
 ;;     (cons (concat ef-end-regexp "\\([&=]\\)") "\\1 \\2")
 ;;     )))
 
-(ert-deftest ef-comment ()
-  (should
-   (equal
-    (ef-format-1 "//a" (ef-rule-space-after "//" "/*"))
-    "// a"))
-  (should
-   (equal
-    (ef-format-1 "/*a*/" (ef-rule-space-after "//" "/*"))
-    "/* a*/")))
+(defun ef-test-rule (str rule)
+  (ef-test-rules str (list rule)))
 
-(ert-deftest ef-comma ()
-  (should
-   (equal
-    (ef-format-1 ",hoge" '(",\\(\\w\\)" . ", \\1"))
-    ", hoge")))
-
-(ert-deftest ef-paren ()
-  (should
-   (equal
-    (ef-format-1 "hoge(" '("\\(\\w\\)(" . "\\1 ("))
-    "hoge (")))
-
-(ert-deftest ef-close-paren ()
-  (should
-   (equal
-    (ef-format-1 ")hoge" '(")\\(\\w\\)" . ") \\1"))
-    ") hoge")))
-
-(ert-deftest ef-before-= ()
-  (should
-   (equal
-    (ef-format-1 "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
-    "a =")))
-
-(ert-deftest ef-after-= ()
-  (should
-   (equal
-    (ef-format-1 "=a" '("=\\(\\w\\)" . "= \\1"))
-    "= a")))
-
-(ert-deftest ef-blank-lines ()
-  (let ((rule '("\n[\n]+" . "\n\n")))
-    (should
-     (equal
-      (ef-format-1 "a\n\na" rule)
-      "a\n\na"))
-    (should
-     (equal
-      (ef-format-1 "a\n\n\na" rule)
-      "a\n\na"))
-    (should
-     (equal
-      (ef-format-1 "a\n\n\n\na" rule)
-      "a\n\na"))))
-
-(ert-deftest ef-whitespace ()
-  (should
-   (equal
-    (ef-format-1 ") \n )" '(")[\n\t ]+)" . "))"))
-    "))")))
-
-(defun ef-test-rules (str rules &optional mode)
-  (when mode (funcall mode))
+(defun ef-test-rules (str rules)
   (erase-buffer)
   (save-excursion (insert str))
   (electric-formatter-region-1
@@ -113,6 +54,67 @@
      (replace-match (cdr rule)))
    (ef-convert-rules rules))
   (substring-no-properties (buffer-string)))
+
+(ert-deftest ef-comment ()
+  (should
+   (equal
+    (ef-test-rule "//a" (ef-rule-space-after "//" "/*"))
+    "// a"))
+  (should
+   (equal
+    (ef-test-rule "/*a*/" (ef-rule-space-after "//" "/*"))
+    "/* a*/")))
+
+(ert-deftest ef-comma ()
+  (should
+   (equal
+    (ef-test-rule ",hoge" '(",\\(\\w\\)" . ", \\1"))
+    ", hoge")))
+
+(ert-deftest ef-paren ()
+  (should
+   (equal
+    (ef-test-rule "hoge(" '("\\(\\w\\)(" . "\\1 ("))
+    "hoge (")))
+
+(ert-deftest ef-close-paren ()
+  (should
+   (equal
+    (ef-test-rule ")hoge" '(")\\(\\w\\)" . ") \\1"))
+    ") hoge")))
+
+(ert-deftest ef-before-= ()
+  (should
+   (equal
+    (ef-test-rule "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
+    "a =")))
+
+(ert-deftest ef-after-= ()
+  (should
+   (equal
+    (ef-test-rule "=a" '("=\\(\\w\\)" . "= \\1"))
+    "= a")))
+
+(ert-deftest ef-blank-lines ()
+  (let ((rule '("\n[\n]+" . "\n\n")))
+    (should
+     (equal
+      (ef-test-rule "a\n\na" rule)
+      "a\n\na"))
+    (should
+     (equal
+      (ef-test-rule "a\n\n\na" rule)
+      "a\n\na"))
+    (should
+     (equal
+      (ef-test-rule "a\n\n\n\na" rule)
+      "a\n\na"))))
+
+(ert-deftest ef-whitespace ()
+  (should
+   (equal
+    (ef-test-rule ") \n )" '(")[\n\t ]+)" . "))"))
+    "))")))
 
 (ert-deftest ef-around ()
   (ert-with-test-buffer (:name "electric-formatter")
@@ -167,24 +169,24 @@
 (ert-deftest ef-inside-paren ()
   (should
    (equal
-    (ef-format-1 "a(bar = 'bar',baz = []):"
+    (ef-test-rule "a(bar = 'bar',baz = []):"
                  '("\\([(,][^(,]+\\)[\t ]+\\(=\\)" . "\\1\\2"))
     "a(bar= 'bar',baz= []):"))
   (should
    (equal
-    (ef-format-1 "a(bar = 'bar',baz = []):"
+    (ef-test-rule "a(bar = 'bar',baz = []):"
                  '("\\([(,][^(,]+\\)\\(=\\)[\t ]+" . "\\1\\2"))
     "a(bar ='bar',baz =[]):"))
   (should
    (equal
-    (ef-format "def foo(bar = 'bar',baz = [],qux = 1):"
+    (ef-test-rules "def foo(bar = 'bar',baz = [],qux = 1):"
                (list
                 (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
                 (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")))
     "def foo(bar='bar',baz=[],qux=1):"))
   (should
    (equal
-    (ef-format ",baz = [],qux = 1):"
+    (ef-test-rules ",baz = [],qux = 1):"
                (list
                 (cons "\\([(,][^(,]+\\)\\(=\\)[\t ]+" "\\1\\2")
                 (cons "\\([(,][^(,]+\\)[\t ]+\\(=\\)" "\\1\\2")))
@@ -417,7 +419,7 @@
 
    (ef-test-execute "foo,bar,baz=1,2,3" "foo, bar, baz = 1, 2, 3")
    ;; (ef-test-execute "foo,=list()" "foo, = list()");; ,as single operator
-   (ef-test-execute "foo,*rest=list2()" "foo, *rest = list2()")
+   ;; (ef-test-execute "foo,*rest=list2()" "foo, *rest = list2()")
    (ef-test-execute "(foo,bar),baz=[1,2],3" "(foo, bar), baz = [1, 2], 3")
    (ef-test-execute "1..20" "1 .. 20")
    ;; (ef-test-execute "/first/.../second/" "/first/ ... /second/") / as word separator
@@ -458,7 +460,7 @@
    (ef-test-execute "2*3" "2 * 3")
    ;;(ef-test-execute "2**3" "2**3")
    (ef-test-execute "def xxx(*yy)")
-   (ef-test-execute "x,*y=foo()" "x, *y = foo()")
+   ;;(ef-test-execute "x,*y=foo()" "x, *y = foo()")
    (ef-test-execute "/xx*/")
    ;; /
    (ef-test-execute "10/3" "10 / 3")
@@ -552,7 +554,7 @@
     (ef-test-execute "++a" "++a")
     (ef-test-execute "--a" "--a")
     (ef-test-execute "b=&a" "b = &a")
-    ;;(ef-test-execute "foo(&a)" "foo(&a)")
+    (ef-test-execute "foo(&a)" "foo(&a)")
     (ef-test-execute "int *a" "int *a")
     (ef-test-execute "*a" "*a")
     (ef-test-execute "int **a" "int **a")

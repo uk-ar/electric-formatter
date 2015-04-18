@@ -32,11 +32,12 @@
 ;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
-(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
-;;(make-variable-buffer-local 'ef-beginning-regexp)
+;;(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
+(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
+(make-variable-buffer-local 'ef-beginning-regexp)
 
 (defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
-;;(make-variable-buffer-local 'ef-end-regexp)
+(make-variable-buffer-local 'ef-end-regexp)
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
@@ -128,16 +129,17 @@
                        "multimap" "set" "hash_map" "iterator" "template"
                        "pair" "auto_ptr" "static_cast" "dynmaic_cast"
                        "const_cast" "reintepret_cast" "#import"))))
-    '(;;delete space for keyword :#include <foo.h>
-      (ef-rule-delete-space (concat keyword-regexp "[\t ]+<")
+    `(;;delete space for keyword :#include <foo.h>
+      (ef-rule-delete-space (concat ,keyword-regexp "[\t ]+<")
                             ef-beginning-regexp)
-      (ef-rule-delete-space (concat keyword-regexp "[^;\n]+")
+      (ef-rule-delete-space (concat ,keyword-regexp "[^;\n]+")
                             ">")
       (ef-rule-delete-space "->" ef-beginning-regexp)
       ;;(equal "b =& a" "b = &a")
       ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
       ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
       (ef-rule-space-around "?" ":") ;;tertiary operator
+      ;;(ef-rule-space-around "*")
       )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
@@ -185,11 +187,13 @@
          (ef-rule-space-after  "//" "/*")
          (ef-rule-space-before "*/")
          ))
-  ;;(make-local-variable 'ef-beginning-regexp)
-  ;; Cannot effect
-  ;; (setq ef-beginning-regexp
-  ;;       (concat "\\(?:" ef-beginning-regexp
-  ;;               "\\|"   (regexp-opt '("&" "*")) "\\)"))
+  (setq ef-beginning-regexp
+        (concat "\\(?:++\\|--\\|&\\|*\\|+\\|-\\|~\\|!\\|\\)?"
+                ef-beginning-regexp))
+  ;;(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
+  (setq ef-end-regexp
+        (concat "\\(?:" ef-end-regexp
+                "\\|" (regexp-opt '("++" "--")) "\\)"))
   )
 
 (add-hook 'c-mode-common-hook
