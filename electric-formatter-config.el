@@ -28,33 +28,36 @@
 ;;; Code:
 (require 'electric-formatter)
 
+;;; Setting:
+;; Including symbol(\\s_) for ruby's symbol ":foo"
+;; Including *& for c's pointer operator ADD ++ -- + - ~ !
+;; Including | for pythons string "'"
+(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
+(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
+
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
    (concat "\\(" pre-regexp "\\)" "\\(" post-regexp "\\)")
    "\\1 \\2"))
 
-;; (defun ef-rule-space-after-regexp (regexp)
-;;   (cons
-;;    (concat "\\(" regexp "\\)" "\\(" ef-beginning-regexp "\\)")
-;;    "\\1 \\2"))
+(defun ef-rule-space-after-regexp (regexp)
+  (ef-rule-space-between-regexp regexp ef-beginning-regexp))
 
 (defun ef-rule-space-after (&rest strings)
-  (ef-rule-space-between-regexp (regexp-opt strings) ef-beginning-regexp))
+  (ef-rule-space-after-regexp (regexp-opt strings)))
 
-;; (defun ef-rule-space-before-regexp (regexp)
-;;   (cons
-;;    (concat "\\(" ef-end-regexp "\\)" "\\(" regexp "\\)")
-;;    "\\1 \\2"))
+(defun ef-rule-space-before-regexp (regexp)
+  (ef-rule-space-between-regexp ef-end-regexp regexp))
 
 (defun ef-rule-space-before (&rest strings)
-  (ef-rule-space-between-regexp ef-end-regexp (regexp-opt strings)))
+  (ef-rule-space-before-regexp (regexp-opt strings)))
 
 (defun ef-rule-space-around-regexp (regexp)
   (cons
    (concat "\\(" ef-end-regexp "\\)"
-           "\\(?:" "[ \t]?" "\\)"
+           "[ \t]?";; drop 1 space
            "\\(" "[ \t]*" regexp "\\)"
-           "\\(?:" "[ \t]?" "\\)"
+           "[ \t]?";; drop 1 space
            "\\(" "[ \t]*" ef-beginning-regexp "\\)")
    "\\1 \\2 \\3"))
 ;;(replace-regexp "\\(\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)\\)\\(?:[ \t]?\\)\\([ \t]*=\\)\\(?:[ \t]?\\)\\([ \t]*\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)\\)" "\\1 \\2 \\3")
@@ -62,17 +65,11 @@
 (defun ef-rule-space-around (&rest strings)
   (ef-rule-space-around-regexp (regexp-opt strings)))
 
+;; todo regexp
 (defun ef-rule-delete-space (pre-regexp post-regexp)
   (cons
    (concat "\\(" pre-regexp "\\)" "[\t ]+" "\\(" post-regexp "\\)")
    "\\1\\2"))
-
-;;; Setting:
-;; Including symbol(\\s_) for ruby's symbol ":foo"
-;; Including *& for c's pointer operator
-;; Including | for pythons string "'"
-(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
-(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
 
 (defvar ef-text-mode-rule-list
   (list
@@ -87,16 +84,32 @@
   (list
    '("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
    ;; Don't use "&" because of poiter operator
-   (ef-rule-space-after  "=" ">" "<" "|" "&" "&&" "^" "%" ",")
-   (ef-rule-space-before "=" ">" "<" "|" "&" "&&" "^" "%")
-   ;;Space after single comment(1st match)
-   (ef-rule-space-after-regexp "\\s<")
+   (ef-rule-space-around "=" "==" "==="
+                         "=>" ">=" "<=" "<<=" ">>=" "=<"
+                         ">" ">>" "<" "<<"
+                         "|" "||" "|="
+                         "!="
+                         "&" "&=" "&&"
+                         "^" "^="
+                         "%" "%="
+                         "/=" ;;"/"
+                         "*=" ;;"*";; hard to support
+                         "+" "+="
+                         "-" "-="
+                         )
+   (ef-rule-space-after  ",")
    ;; Don't use syntax table because punctuations include ","
    ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
    ))
 
 (defvar ef-ruby-mode-rule-list
   (list
+   (ef-rule-space-around ".." "..."
+                         "||=" "&&=" "**=" "<=>"
+                         "=~" "!~"
+                         "*" "/")
+   (ef-rule-space-around "?" ":") ;;tertiary operator
+   (ef-rule-space-after  "!")
    ;; advanced
    ;; convert keyword
    '("\\_<and\\_>" . "&&")
@@ -127,9 +140,7 @@
      ;;(equal "b =& a" "b = &a")
      ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
      ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
-     ;;tertiary operator
-     (ef-rule-space-before "?" ":")
-     (ef-rule-space-after  "?" ":")
+     (ef-rule-space-around "?" ":") ;;tertiary operator
      )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
@@ -137,14 +148,11 @@
   (list
    (ef-rule-space-after  ")" "\"" ".")
    (ef-rule-space-before "(" "\"" ".")
-   (ef-rule-space-between-regexp (regexp-opt '(")" "\"")) "\\(?:\\_<\\)")
-   (ef-rule-space-between-regexp (regexp-opt '(")")) "\"")
-   (ef-rule-space-between-regexp "\\(?:\\_>\\)" (regexp-opt '("(" "\"")))
-   (ef-rule-space-between-regexp "\"" (regexp-opt '("(")))
-   (ef-rule-delete-space "," "(")
+   (ef-rule-delete-space "," ef-beginning-regexp);;regexp
    ;;advanced
    ;;delete space trailing whitespaces :)\n)
    '(")[\n\t ]+)" . "))")
+   '("\n[\n]+" . "\n\n")
    ))
 
 (setq-default ef-rule-list ef-prog-mode-rule-list)
@@ -168,7 +176,7 @@
 
 (defun ef-emacs-lisp-mode-setup()
   (setq ef-rule-list
-        (append ef-prog-mode-rule-list ef-emacs-lisp-mode-rule-list)))
+        (append ef-emacs-lisp-mode-rule-list)))
 
 (defun ef-python-mode-setup()
   (setq ef-rule-list

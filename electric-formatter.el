@@ -107,18 +107,7 @@
          ;;match-end
          (save-match-data
            (save-excursion
-             (syntax-ppss (match-end 1)
-                          ;; (if (and (match-end 1)
-                          ;;          (match-string 2)
-                          ;;          (equal "" (match-string 2)))
-                          ;;     (+ 1 (match-end 1))
-                          ;;   )
-                          ;; (+
-                          ;; 1
-                          ;; ;; (if (and (match-string 2)
-                          ;; ;;          ) 1 0)
-                          ;; )
-                          )))))
+             (syntax-ppss (match-end 1))))))
     (cond
      ;; in string
      ((and (nth 3 ppss)));;nop
@@ -128,25 +117,35 @@
         (replace-match (cdr rule))))
      (t
       (when (memql rule ef-rule-list)
-        (replace-match (cdr rule)))))))
+        (replace-match (cdr rule)))))
+     ;; this is for overlapped regexp match
+     (when (and (match-end 1)
+                (< 0 (length (match-string 1))))
+       (goto-char (match-end 1)))
+    ))
+
+(defun ef-convert-rules (rules)
+  (mapcar
+   (lambda (rule)
+     (if (symbolp (car rule))
+         (apply (car rule) (cdr rule))
+       rule);; regexp
+     )
+   rules))
 
 (defun electric-formatter-region-1 (beg end func rules)
-  ;; point must be region beginning
-  (let ((end-marker (set-marker (make-marker) end)))
+  ;; TODO: integrate to buffer
+  (save-restriction
+    (narrow-to-region beg end)
+    ;; dolist has problem with edebug?
     (mapc
      (lambda (rule)
        (save-excursion
          (goto-char beg)
-         (while (and (< (point) (marker-position end-marker))
-                     (progn
-                       ;;(unless (eq beg (point)) (forward-char -1))
-                       (re-search-forward (car rule)
-                                          (marker-position end-marker) t)))
+         (while (re-search-forward (car rule) nil t)
            (funcall func rule)
            )))
-     rules)
-    (set-marker end-marker nil)
-    ))
+     rules)))
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)
@@ -170,10 +169,12 @@
       (goto-char pos))
      (eobp
       (goto-char (point-max)))
-     ;; (t
-     ;;  (goto-char (marker-position pos-marker)))
+     ((< pos beg)
+      (goto-char pos))
+     (t ;;(< end pos)
+      (goto-char (marker-position pos-marker)))
      )
-    ;; (set-marker pos-marker nil)
+    (set-marker pos-marker nil)
     ))
 
 ;;;###autoload
