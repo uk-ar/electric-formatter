@@ -107,9 +107,11 @@
   '((ef-rule-space-around ".." "..."
                           "||=" "&&=" "**=" "<=>"
                           "=~" "!~"
-                          "*" "/")
+                          "**" "*"
+                          "/")
     (ef-rule-space-around "?" ":") ;;tertiary operator
-    (ef-rule-space-after  "!")
+    (ef-rule-space-after  "!" "{")
+    (ef-rule-space-before "}")
     ;; advanced
     ;; convert keyword
     ("\\_<and\\_>" . "&&")
@@ -134,12 +136,12 @@
                             ef-beginning-regexp)
       (ef-rule-delete-space (concat ,keyword-regexp "[^;\n]+")
                             ">")
-      (ef-rule-delete-space "->" ef-beginning-regexp)
+      ;; rvalue return func(param) value of right
       ;;(equal "b =& a" "b = &a")
       ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
       ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
       (ef-rule-space-around "?" ":") ;;tertiary operator
-      ;;(ef-rule-space-around "*")
+      (ef-rule-space-around "/*" "/")
       )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el

@@ -55,7 +55,7 @@
    (ef-convert-rules rules))
   (substring-no-properties (buffer-string)))
 
-(ert-deftest ef-comment ()
+(ert-deftest ef-test-comment ()
   (should
    (equal
     (ef-test-rule "//a" (ef-rule-space-after "//" "/*"))
@@ -65,37 +65,37 @@
     (ef-test-rule "/*a*/" (ef-rule-space-after "//" "/*"))
     "/* a*/")))
 
-(ert-deftest ef-comma ()
+(ert-deftest ef-test-comma ()
   (should
    (equal
     (ef-test-rule ",hoge" '(",\\(\\w\\)" . ", \\1"))
     ", hoge")))
 
-(ert-deftest ef-paren ()
+(ert-deftest ef-test-paren ()
   (should
    (equal
     (ef-test-rule "hoge(" '("\\(\\w\\)(" . "\\1 ("))
     "hoge (")))
 
-(ert-deftest ef-close-paren ()
+(ert-deftest ef-test-close-paren ()
   (should
    (equal
     (ef-test-rule ")hoge" '(")\\(\\w\\)" . ") \\1"))
     ") hoge")))
 
-(ert-deftest ef-before-= ()
+(ert-deftest ef-test-before-= ()
   (should
    (equal
     (ef-test-rule "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
     "a =")))
 
-(ert-deftest ef-after-= ()
+(ert-deftest ef-test-after-= ()
   (should
    (equal
     (ef-test-rule "=a" '("=\\(\\w\\)" . "= \\1"))
     "= a")))
 
-(ert-deftest ef-blank-lines ()
+(ert-deftest ef-test-blank-lines ()
   (let ((rule '("\n[\n]+" . "\n\n")))
     (should
      (equal
@@ -110,13 +110,13 @@
       (ef-test-rule "a\n\n\n\na" rule)
       "a\n\na"))))
 
-(ert-deftest ef-whitespace ()
+(ert-deftest ef-test-whitespace ()
   (should
    (equal
     (ef-test-rule ") \n )" '(")[\n\t ]+)" . "))"))
     "))")))
 
-(ert-deftest ef-around ()
+(ert-deftest ef-test-around ()
   (ert-with-test-buffer (:name "electric-formatter")
     (c-mode)
     (should
@@ -136,7 +136,7 @@
       (ef-test-rules "a=b=c" (list (ef-rule-space-around "=")))
       "a = b = c"))))
 
-(ert-deftest ef-multibyte ()
+(ert-deftest ef-test-multibyte ()
   (ert-with-test-buffer (:name "electric-formatter")
     (org-mode)
     (should
@@ -158,7 +158,7 @@
       "あ a あ"))
     ))
 
-(ert-deftest ef--> ()
+(ert-deftest ef-test--> ()
   (ert-with-test-buffer (:name "electric-formatter")
   (should
    (equal
@@ -166,7 +166,7 @@
                    (list (ef-rule-delete-space "->" ef-beginning-regexp)))
     "a->b"))))
 
-(ert-deftest ef-inside-paren ()
+(ert-deftest ef-test-inside-paren ()
   (should
    (equal
     (ef-test-rule "a(bar = 'bar',baz = []):"
@@ -195,7 +195,7 @@
 
 ;;bug in inside string
 
-(ert-deftest ef-regexp-space-after ()
+(ert-deftest ef-test-regexp-space-after ()
   (should
    (equal
     (ef-regexp
@@ -207,7 +207,7 @@
     "\\([,=]\\)"
     )))
 
-(ert-deftest ef-regexp-space-after-not-exist ()
+(ert-deftest ef-test-regexp-space-after-not-exist ()
   (should
    (equal
     (ef-regexp
@@ -217,7 +217,7 @@
     nil
     )))
 
-(ert-deftest ef-regexp-space-before ()
+(ert-deftest ef-test-regexp-space-before ()
   (should
    (equal
     (ef-regexp
@@ -229,7 +229,7 @@
     "\\(=\\)"
     )))
 
-(ert-deftest ef-regexp-opt ()
+(ert-deftest ef-test-regexp-opt ()
   (should
    (equal
     (ef-regexp-opt
@@ -243,7 +243,7 @@
       ("foo" . "bar"))
     )))
 
-(ert-deftest ef-regexp-opt-after-not-exist ()
+(ert-deftest ef-test-regexp-opt-after-not-exist ()
   (should
    (equal
     (ef-regexp-opt
@@ -292,7 +292,7 @@
                     ,expect))
      (should (equal (point) , point))))
 
-(ert-deftest ef-mode ()
+(ert-deftest ef-test-mode ()
   (ert-with-test-buffer (:name "electric-formatter")
     ;;default is on
     (should electric-formatter-mode)
@@ -309,7 +309,7 @@
     (should (< 2 (length ef-rule-list)))
     ))
 
-(ert-deftest ef-in-default ()
+(ert-deftest ef-test-in-default ()
   (ert-with-test-buffer (:name "electric-formatter")
    (electric-formatter-mode 1)
    (should electric-formatter-mode)
@@ -350,7 +350,7 @@
    (ef-test-region "a\n\n\na" "a\n\na"(+ (point-min) 2))
    ))
 
-(ert-deftest ef-in-elisp ()
+(ert-deftest ef-test-in-elisp ()
   (ert-with-test-buffer (:name "electric-formatter")
    (emacs-lisp-mode)
    (electric-formatter-mode 1)
@@ -392,7 +392,7 @@
    ))
 
 ;;http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2foperator.html
-(ert-deftest ef-in-ruby ()
+(ert-deftest ef-test-in-ruby ()
   (ert-with-test-buffer (:name "electric-formatter")
    (ruby-mode)
    (electric-formatter-mode 1)
@@ -425,6 +425,7 @@
    ;; (ef-test-execute "/first/.../second/" "/first/ ... /second/") / as word separator
    (ef-test-execute "!me" "! me")
    (ef-test-execute "i!=you" "i != you")
+
    ;;http://docs.ruby-lang.org/ja/2.0.0/doc/symref.html
    ;; ?
    (ef-test-execute "def xxx!" "def xxx!")
@@ -477,7 +478,7 @@
    ;; (ef-test-execute "foo::(bar)" "foo::(bar)")
    (ef-test-execute "a?b:c" "a ? b : c")
    ;;(ef-test-execute "{key:value}" "{key: value}");;space after?
-   (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{:a => 'aaa', :b => 'bbb'}")
+   ;;(ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
    ;;(ef-test-execute "{a:'aaa',b:'bbb'}" "{a:'aaa', b:'bbb'}")
    ;; .
    (ef-test-execute "xxx.yyy")
@@ -491,16 +492,95 @@
    (ef-test-execute "def foo(bar,baz)" "def foo(bar, baz)")
    (ef-test-execute "[:a,:b,c:]" "[:a, :b, c:]")
    (ef-test-execute "{:a=>1,:b=>2}.each{|key,val|}"
-                    "{:a => 1, :b => 2}.each{|key, val|}")
+                    "{ :a => 1, :b => 2 }.each{|key, val|}")
+   ;;<
+   (ef-test-execute "3<5" "3 < 5")
+   (ef-test-execute "3<=5" "3 <= 5")
+   (ef-test-execute "3<=>5" "3 <=> 5")
+   (ef-test-execute "3<<1" "3 << 1")
+   (ef-test-execute "a<<=1" "a <<= 1")
+   (ef-test-execute "<<EOS")
+   (ef-test-execute "<<-EOS")
+   (ef-test-execute "<<'EOS'")
+   (ef-test-execute "class Foo<Super" "class Foo < Super")
+   (ef-test-execute "class<<obj" "class << obj")
+   ;;>
+   (ef-test-execute "3>5" "3 > 5")
+   (ef-test-execute "3>=5" "3 >= 5")
+   (ef-test-execute "3<=>3" "3 <=> 3")
+   (ef-test-execute "3>>1" "3 >> 1")
+   (ef-test-execute "a>>=1" "a >>= 1")
+   ;;(ef-test-execute "{1=>'11',3=>'333'}" "{ 1 => '11' , 3 => '333' }")
+   ;;(ef-test-execute "->(a,b){p[a,b]}" "->(a,b){ p [a,b] }")
+   ;;=
+   (ef-test-execute "a=12" "a = 12")
+   (ef-test-execute "xxx.a=12" "xxx.a = 12")
+   (ef-test-execute "a==12" "a == 12")
+   (ef-test-execute "a===12" "a === 12")
+   (ef-test-execute "a+=12" "a += 12")
+   (ef-test-execute "a*=12" "a *= 12")
+   (ef-test-execute "a||=12" "a ||= 12")
+   (ef-test-execute "def xx=")
+   (ef-test-execute "=begin")
+   (ef-test-execute "=end")
+   ;;(ef-test-execute "{1=>'11',3=>'333'}" "{ 1 => '11' , 3 => '333' }")
+   (ef-test-execute "rescue=>XXX" "rescue => XXX")
+   ;;(ef-test-execute "xxx#=>comment" "xxx #=> comment")
+   ;;~
+   ;;(ef-test-execute "'%04b%04b'%[3,~3]" "'%04b %04b' % [3, ~ 3]")
+   ;;(ef-test-execute "/xxx/=~yyy" "/xxx/ =~ yyy")
+   ;;(ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
+   ;;(ef-test-execute "~/xxx/" "~ /xxx/")
+   ;;$
+   (ef-test-execute "$xxx")
+   (ef-test-execute "$_")
+   (ef-test-execute "$!")
+   (ef-test-execute "/xx$/")
+   ;;@
+   (ef-test-execute "@xxx")
+   (ef-test-execute "@@xxx")
+   (ef-test-execute "def+@")
+   (ef-test-execute "def-@")
+   ;;_
+   (ef-test-execute "xxx_yyy")
+   (ef-test-execute "123_456")
+   ;;{
+   ;;}
+   ;;(ef-test-execute "{1=>'11',3=>'333'}" "{ 1 => '11' , 3 => '333' }")
+   ;;(ef-test-execute "5.times{|n|p n}" "5.times{|n| p n}")
+   (ef-test-execute "/xx{2,3}/")
+   (ef-test-execute "\"a is#{a}\"")
+   ;;[
+   ;;]
+   (ef-test-execute "[1,'some',:ok]" "[1, 'some', :ok]")
+   (ef-test-execute "'abcde'[1,2]" "'abcde'[1, 2]")
+   (ef-test-execute "/xx[abc]/")
+   ;;(
+   ;;)
+   ;;(ef-test-execute "(true and false)")
+   (ef-test-execute "p({})")
+   ;;"
+   (ef-test-execute "\"abc\"")
+   ;;'
+   (ef-test-execute "'abc'")
+   ;;`
+   (ef-test-execute "`ls`")
+   ;;\
+   ;;(ef-test-execute "puts'abc\'def'" "puts 'abc\'def'")
+   (ef-test-execute "puts(3 \
+    + 4)")
+;;;
+   (ef-test-execute "a=3;" "a = 3;")
+   ;;(ef-test-execute "[1,2,3].each{|v;z|z=v*2...}" "[1,2,3].each{|v; z| z = v * 2 ... }")
 
    (ef-test-execute "+a")
    (ef-test-execute "-a")
    (ef-test-execute "a+b" "a + b")
    (ef-test-execute "a-b" "a - b")
-   ;;(ef-test-execute "a*b"  "a * b")
+   (ef-test-execute "a*b"  "a * b")
    (ef-test-execute "a/b"  "a / b")
    (ef-test-execute "a%b"  "a % b")
-   ;;(ef-test-execute "a**b" "a ** b")
+   ;; (ef-test-execute "a**b" "a ** b")
    (ef-test-execute "a<<b" "a << b")
 
    (ef-test-execute "reg=~str" "reg =~ str")
@@ -520,7 +600,7 @@
    (ef-test-execute "##a" "## a")
    ))
 
-(ert-deftest ef-in-python ()
+(ert-deftest ef-test-in-python ()
   (ert-with-test-buffer (:name "electric-formatter")
     (python-mode)
     (electric-formatter-mode 1)
@@ -533,7 +613,7 @@
                      "def foo(bar='bar', baz=[], qux=1):")
     ))
 
-(ert-deftest ef-in-c ()
+(ert-deftest ef-test-in-c ()
   (ert-with-test-buffer (:name "electric-formatter")
     (c-mode)
     (should electric-formatter-mode)
@@ -556,6 +636,8 @@
     (ef-test-execute "b=&a" "b = &a")
     (ef-test-execute "foo(&a)" "foo(&a)")
     (ef-test-execute "int *a" "int *a")
+    (ef-test-execute "int* a" "int* a")
+    (ef-test-execute "int*a" "int*a")
     (ef-test-execute "*a" "*a")
     (ef-test-execute "int **a" "int **a")
     (ef-test-execute "+a" "+a")
@@ -566,8 +648,8 @@
     (ef-test-execute "(a)b" "(a)b")
     ;; 4th
     ;; (ef-test-execute "b*a" "b * a")
-    ;; (ef-test-execute "b/a" "b / a")
-    ;; (ef-test-execute "b/*a" "b/* a");;comment
+    (ef-test-execute "b/a" "b / a")
+    (ef-test-execute "b/*a" "b /* a");;comment
     (ef-test-execute "b%a" "b % a")
     ;; 5th
     (ef-test-execute "b+a" "b + a")
@@ -616,7 +698,7 @@
     (ef-test-region "int  a;\nchar b;" "int  a;\nchar b;" (+ (point-min) 2))
     ))
 
-(ert-deftest ef-in-org ()
+(ert-deftest ef-test-in-org ()
   (ert-with-test-buffer (:name "electric-formatter")
     (org-mode)
     (electric-formatter-mode 1)
@@ -635,4 +717,5 @@
   (lambda (buffer-name)
     (when (string-match "*Test buffer" buffer-name) buffer-name))
   (mapcar 'buffer-name (buffer-list))))
+
 (ert-run-tests-interactively t)
