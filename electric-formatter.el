@@ -100,6 +100,14 @@
       ;;(save-excursion)
       )))
 
+(defun ef-convert-rule (rule)
+  (if (symbolp (car rule))
+      (apply (car rule) (cdr rule))
+    rule));; regexp
+
+(defun ef-convert-rules (rules)
+  (mapcar 'ef-convert-rule rules))
+
 ;;(electric-formatter-region-1 '("\\w," . "\\1 ,"))
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-func (rule)
@@ -113,25 +121,17 @@
      ((and (nth 3 ppss)));;nop
      ;; in comment
      ((nth 4 ppss)
-      (when (memql rule ef-comment-rule-list)
+      ;; FIXME: member seems to be slow
+      (when (member rule (ef-convert-rules ef-comment-rule-list))
         (replace-match (cdr rule))))
      (t
-      (when (memql rule ef-rule-list)
+      (when (member rule (ef-convert-rules ef-rule-list))
         (replace-match (cdr rule)))))
-     ;; this is for overlapped regexp match
-     (when (and (match-end 1)
-                (< 0 (length (match-string 1))))
-       (goto-char (match-end 1)))
+    ;; this is for overlapped regexp match
+    (when (and (match-end 1)
+               (< 0 (length (match-string 1))))
+      (goto-char (match-end 1)))
     ))
-
-(defun ef-convert-rules (rules)
-  (mapcar
-   (lambda (rule)
-     (if (symbolp (car rule))
-         (apply (car rule) (cdr rule))
-       rule);; regexp
-     )
-   rules))
 
 (defun electric-formatter-region-1 (beg end func rules)
   ;; TODO: integrate to buffer
@@ -142,10 +142,11 @@
      (lambda (rule)
        (save-excursion
          (goto-char beg)
-         (while (re-search-forward (car rule) nil t)
-           (funcall func rule)
-           )))
-     rules)))
+         (let ((converted-rule (ef-convert-rule rule)))
+           (while (re-search-forward (car converted-rule) nil t)
+             (funcall func converted-rule)))))
+     rules ;; Do not convert rules for easy debug
+     )))
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)

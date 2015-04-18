@@ -33,7 +33,10 @@
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
 (defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
+;;(make-variable-buffer-local 'ef-beginning-regexp)
+
 (defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
+;;(make-variable-buffer-local 'ef-end-regexp)
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
@@ -60,7 +63,6 @@
            "[ \t]?";; drop 1 space
            "\\(" "[ \t]*" ef-beginning-regexp "\\)")
    "\\1 \\2 \\3"))
-;;(replace-regexp "\\(\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)\\)\\(?:[ \t]?\\)\\([ \t]*=\\)\\(?:[ \t]?\\)\\([ \t]*\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)\\)" "\\1 \\2 \\3")
 
 (defun ef-rule-space-around (&rest strings)
   (ef-rule-space-around-regexp (regexp-opt strings)))
@@ -72,55 +74,51 @@
    "\\1\\2"))
 
 (defvar ef-text-mode-rule-list
-  (list
-   '("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-   '("\\([[:multibyte:]]\\)[ ]?\\([[:unibyte:]]\\)" . "\\1 \\2")
-   '("\\([[:unibyte:]]\\)[ ]?\\([[:multibyte:]]\\)" . "\\1 \\2")
-   ;;https://github.com/zk-phi/electric-spacing
-   (ef-rule-space-after ",")
-   ))
+  '(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
+    ("\\([[:multibyte:]]\\)[ ]?\\([[:unibyte:]]\\)" . "\\1 \\2")
+    ("\\([[:unibyte:]]\\)[ ]?\\([[:multibyte:]]\\)" . "\\1 \\2")
+    ;;https://github.com/zk-phi/electric-spacing
+    (ef-rule-space-after ",")
+    ))
 
 (defvar ef-prog-mode-rule-list
-  (list
-   '("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
-   ;; Don't use "&" because of poiter operator
-   (ef-rule-space-around "=" "==" "==="
-                         "=>" ">=" "<=" "<<=" ">>=" "=<"
-                         ">" ">>" "<" "<<"
-                         "|" "||" "|="
-                         "!="
-                         "&" "&=" "&&"
-                         "^" "^="
-                         "%" "%="
-                         "/=" ;;"/"
-                         "*=" ;;"*";; hard to support
-                         "+" "+="
-                         "-" "-="
-                         )
-   (ef-rule-space-after  ",")
-   ;; Don't use syntax table because punctuations include ","
-   ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
-   ))
+  '(("\n[\n]+" . "\n\n") ;;Two blank lines to one blank line
+    ;; Don't use "&" because of poiter operator
+    (ef-rule-space-around "=" "==" "==="
+                          "=>" ">=" "<=" "<<=" ">>=" "=<"
+                          ">" ">>" "<" "<<"
+                          "|" "||" "|="
+                          "!="
+                          "&" "&=" "&&"
+                          "^" "^="
+                          "%" "%="
+                          "/=" ;;"/"
+                          "*=" ;;"*";; hard to support
+                          "+" "+="
+                          "-" "-="
+                          )
+    (ef-rule-space-after  ",")
+    ;; Don't use syntax table because punctuations include ","
+    ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
+    ))
 
 (defvar ef-ruby-mode-rule-list
-  (list
-   (ef-rule-space-around ".." "..."
-                         "||=" "&&=" "**=" "<=>"
-                         "=~" "!~"
-                         "*" "/")
-   (ef-rule-space-around "?" ":") ;;tertiary operator
-   (ef-rule-space-after  "!")
-   ;; advanced
-   ;; convert keyword
-   '("\\_<and\\_>" . "&&")
-   '("\\_<or\\_>" . "||")))
+  '((ef-rule-space-around ".." "..."
+                          "||=" "&&=" "**=" "<=>"
+                          "=~" "!~"
+                          "*" "/")
+    (ef-rule-space-around "?" ":") ;;tertiary operator
+    (ef-rule-space-after  "!")
+    ;; advanced
+    ;; convert keyword
+    ("\\_<and\\_>" . "&&")
+    ("\\_<or\\_>" . "||")))
 
 (defvar ef-python-mode-rule-list
-  (list
-   ;;delete space for default param: foo(a=b)
-   (ef-rule-delete-space "[(,][^(,]+" "=")
-   (ef-rule-delete-space "[(,][^(,]+=" ef-beginning-regexp)
-   ))
+  '(;;delete space for default param: foo(a=b)
+    (ef-rule-delete-space "[(,][^(,]+" "=")
+    (ef-rule-delete-space "[(,][^(,]+=" ef-beginning-regexp)
+    ))
 
 (defvar ef-c-mode-rule-list
   ;;copy keyword from electric-spacing
@@ -130,40 +128,37 @@
                        "multimap" "set" "hash_map" "iterator" "template"
                        "pair" "auto_ptr" "static_cast" "dynmaic_cast"
                        "const_cast" "reintepret_cast" "#import"))))
-    (list
-     ;;delete space for keyword :#include <foo.h>
-     (ef-rule-delete-space (concat keyword-regexp "[\t ]+<")
-                           ef-beginning-regexp)
-     (ef-rule-delete-space (concat keyword-regexp "[^;\n]+")
-                           ">")
-     (ef-rule-delete-space "->" ef-beginning-regexp)
-     ;;(equal "b =& a" "b = &a")
-     ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
-     ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
-     (ef-rule-space-around "?" ":") ;;tertiary operator
-     )))
+    '(;;delete space for keyword :#include <foo.h>
+      (ef-rule-delete-space (concat keyword-regexp "[\t ]+<")
+                            ef-beginning-regexp)
+      (ef-rule-delete-space (concat keyword-regexp "[^;\n]+")
+                            ">")
+      (ef-rule-delete-space "->" ef-beginning-regexp)
+      ;;(equal "b =& a" "b = &a")
+      ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
+      ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
+      (ef-rule-space-around "?" ":") ;;tertiary operator
+      )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
 (defvar ef-emacs-lisp-mode-rule-list
-  (list
-   (ef-rule-space-after  ")" "\"" ".")
-   (ef-rule-space-before "(" "\"" ".")
-   (ef-rule-delete-space "," ef-beginning-regexp);;regexp
-   ;;advanced
-   ;;delete space trailing whitespaces :)\n)
-   '(")[\n\t ]+)" . "))")
-   '("\n[\n]+" . "\n\n")
-   ))
+  '((ef-rule-space-after  ")" "\"" ".")
+    (ef-rule-space-before "(" "\"" ".")
+    (ef-rule-delete-space "," ef-beginning-regexp);;regexp
+    ;;advanced
+    ;;delete space trailing whitespaces :)\n)
+    '(")[\n\t ]+)" . "))")
+    '("\n[\n]+" . "\n\n")
+    ))
 
 (setq-default ef-rule-list ef-prog-mode-rule-list)
 
 (setq-default
  ef-comment-rule-list
- (list
-  ;;Space after single comment
-  (ef-rule-space-after-regexp "\\s<")
-  ;;(ef-rule-space-after-regexp "\\'")
-  ))
+ '(;;Space after single comment
+   (ef-rule-space-after-regexp "\\s<")
+   ;;(ef-rule-space-after-regexp "\\'")
+   ))
 
 (global-electric-formatter-mode 1)
 

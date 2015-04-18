@@ -111,7 +111,7 @@
    (point-min) (point-max)
    (lambda (rule)
      (replace-match (cdr rule)))
-   rules)
+   (ef-convert-rules rules))
   (substring-no-properties (buffer-string)))
 
 (ert-deftest ef-around ()
@@ -596,10 +596,10 @@
     (ef-test-execute "a?b:c" "a ? b : c")
     ;; 15h
     (ef-test-execute "b=a" "b = a")
-    ;;(ef-test-execute "b+=a" "b += a")
-    ;;(ef-test-execute "b-=a" "b -= a")
-    ;;(ef-test-execute "b*=a" "b *= a")
-    ;;(ef-test-execute "b/=a" "b /= a")
+    (ef-test-execute "b+=a" "b += a")
+    (ef-test-execute "b-=a" "b -= a")
+    (ef-test-execute "b*=a" "b *= a")
+    (ef-test-execute "b/=a" "b /= a")
     (ef-test-execute "b%=a" "b %= a")
     (ef-test-execute "b<<=a" "b <<= a")
     (ef-test-execute "b>>=a" "b >>= a")
