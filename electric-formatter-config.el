@@ -33,10 +33,12 @@
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
 ;;(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
-(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
+(defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
 (make-variable-buffer-local 'ef-beginning-regexp)
 
-(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
+;;(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
+(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|\\s\"\\)")
+;;(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
 (make-variable-buffer-local 'ef-end-regexp)
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
@@ -99,15 +101,16 @@
                           "-" "-="
                           )
     (ef-rule-space-after  ",")
+    (ef-rule-space-before-regexp "\\s<")
     ;; Don't use syntax table because punctuations include ","
     ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
     ))
 
 (defvar ef-ruby-mode-rule-list
-  '((ef-rule-space-around ".." "..."
-                          "||=" "&&=" "**=" "<=>"
+  '((ef-rule-space-around "..." ".."
+                          "||=" "&&=" "<=>"
                           "=~" "!~"
-                          "**" "*"
+                          "**=" "**" "*"
                           "/")
     (ef-rule-space-around "?" ":") ;;tertiary operator
     (ef-rule-space-after  "!" "{")
@@ -168,7 +171,10 @@
 
 (defun ef-ruby-mode-setup()
   (setq ef-rule-list
-        (append ef-prog-mode-rule-list ef-ruby-mode-rule-list)))
+        (append ef-ruby-mode-rule-list ef-prog-mode-rule-list))
+  (setq ef-comment-rule-list
+        (append ef-comment-rule-list
+                '((ef-rule-space-after "#=>")))))
 
 (defun ef-text-mode-setup()
   (setq ef-rule-list ef-text-mode-rule-list))
@@ -185,12 +191,11 @@
   (setq ef-rule-list
         (append ef-prog-mode-rule-list ef-c-mode-rule-list))
   (setq ef-comment-rule-list
-        (list
-         (ef-rule-space-after  "//" "/*")
-         (ef-rule-space-before "*/")
-         ))
+        (append ef-comment-rule-list
+                '((ef-rule-space-after  "//" "/*")
+                  (ef-rule-space-before "*/"))))
   (setq ef-beginning-regexp
-        (concat "\\(?:++\\|--\\|&\\|*\\|+\\|-\\|~\\|!\\|\\)?"
+        (concat "\\(?:++\\|--\\|&\\|*\\)?"
                 ef-beginning-regexp))
   ;;(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
   (setq ef-end-regexp
