@@ -266,8 +266,11 @@
     (when pre (insert pre))
     (insert string)
     (when post (save-excursion (insert post)))
+    ;;(font-lock-fontify-buffer);; need?
     ;; (execute-kbd-macro (kbd "RET"))
-    (electric-formatter-electric)
+    (with-current-buffer (current-buffer)
+      (electric-formatter-electric)
+      )
     (should (equal (substring-no-properties (buffer-string))
                    (concat pre expect post)))
     (should (equal (point) (+ (length (concat pre expect)) 1)))
@@ -424,15 +427,18 @@
    (ef-test-execute "1..20" "1 .. 20")
    (ef-test-execute "'first'...'second'" "'first' ... 'second'")
    (ef-test-execute "/first/.../second/" "/first/ ... /second/")
+   ;; http://docs.ruby-lang.org/ja/2.0.0/doc/symref.html
+   ;; !
    (ef-test-execute "!me" "! me")
    (ef-test-execute "i!=you" "i != you")
-
-   ;; http://docs.ruby-lang.org/ja/2.0.0/doc/symref.html
-   ;; ?
    (ef-test-execute "def xxx!" "def xxx!")
+   (ef-test-execute "aaa!~yyy" "aaa !~ yyy")
+   (ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
+   ;; ?
    (ef-test-execute "?a")
    (ef-test-execute "def xxx?")
    (ef-test-execute "/xxx?/")
+   (ef-test-execute "xx ? yy : zz")
    ;; %
    (ef-test-execute "10%3" "10 % 3")
    (ef-test-execute "'04b'%3" "'04b' % 3")
@@ -474,9 +480,9 @@
    (ef-test-execute "/^xxx/")
    ;; :
    (ef-test-execute "a=:b" "a = :b")
-   ;; (ef-test-execute "A::B" "A::B")
-   ;; (ef-test-execute "::B" "::B")
-   ;; (ef-test-execute "foo::(bar)" "foo::(bar)")
+   (ef-test-execute "A::B" "A::B")
+   (ef-test-execute "::B" "::B")
+   (ef-test-execute "foo::(bar)" "foo::(bar)")
    (ef-test-execute "a?b:c" "a ? b : c")
    ;; (ef-test-execute "{key:value}" "{key: value}");; space after?
    ;; (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
@@ -485,7 +491,7 @@
    (ef-test-execute "xxx.yyy")
    (ef-test-execute "1..20" "1 .. 20")
    (ef-test-execute "1...20" "1 ... 20")
-   ;; (ef-test-execute "if/^begin/../^end/" "if /^begin/ .. /^end/")
+   ;;(ef-test-execute "if/^begin/../^end/" "if /^begin/ .. /^end/")
    (ef-test-execute "/xx.xx/")
    ;; ,
    (ef-test-execute "a,b=[1,2,3]" "a, b = [1, 2, 3]")
@@ -529,8 +535,8 @@
    (ef-test-execute "xxx#=>comment" "xxx #=> comment")
    ;; ~
    (ef-test-execute "'%04b%04b'%[3,~3]" "'%04b%04b' % [3, ~3]")
-   ;;(ef-test-execute "/xxx/=~yyy" "/xxx/ =~ yyy")
-   ;;(ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
+   (ef-test-execute "/xxx/=~yyy" "/xxx/ =~ yyy")
+   (ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
    ;;(ef-test-execute "~/xxx/" "~ /xxx/")
    ;; $
    (ef-test-execute "$xxx")
@@ -570,9 +576,9 @@
    ;; (ef-test-execute "puts'abc\'def'" "puts 'abc\'def'")
    (ef-test-execute "puts(3 \
     + 4)")
-;;;
+   ;;;
    (ef-test-execute "a=3;" "a = 3;")
-   ;;(ef-test-execute "[1,2,3].each{|v; z|z=v*2...}" "[1,2,3].each{|v; z| z = v * 2 ... }")
+   ;;(ef-test-execute "[1,2,3].each{|v;z|z=v*2...}" "[1,2,3].each{|v; z| z = v * 2 ... }")
 
    (ef-test-execute "+a")
    (ef-test-execute "-a")
@@ -581,7 +587,7 @@
    (ef-test-execute "a*b"  "a * b")
    (ef-test-execute "a/b"  "a / b")
    (ef-test-execute "a%b"  "a % b")
-   ;; (ef-test-execute "a**b" "a ** b")
+   (ef-test-execute "a**b" "a ** b")
    (ef-test-execute "a<<b" "a << b")
 
    (ef-test-execute "reg=~str" "reg =~ str")
@@ -648,7 +654,16 @@
     ;; 3rd
     (ef-test-execute "(a)b" "(a)b")
     ;; 4th
-    ;; (ef-test-execute "b*a" "b * a")
+    ;; (ef-test-execute "c=b*a" "c = b * a")
+    ;; (ef-test-execute "c+b*a" "c + b * a")
+    ;; (ef-test-execute "c(b*a)" "c(b * a)");; function call
+    ;; (ef-test-execute "c(d, b*a)" "c(d, b * a)")
+    ;; (ef-test-execute "c(d, b*a, e)" "c(d, b * a, e)")
+    ;; (ef-test-execute "return b*a" "return b * a")
+    ;; (ef-test-execute "int*a" "int*a")
+    ;; (ef-test-execute "int *a" "int *a")
+    ;; (ef-test-execute "c;int*a" "c;int*a")
+    ;; (ef-test-execute "c(int*a)" "c(int*a)");; function prototype
     (ef-test-execute "b/a" "b / a")
     (ef-test-execute "b/*a" "b /* a");; comment
     (ef-test-execute "b%a" "b % a")

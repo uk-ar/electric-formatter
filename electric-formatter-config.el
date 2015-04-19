@@ -43,7 +43,9 @@
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
-   (concat "\\(" pre-regexp "\\)" "\\(" post-regexp "\\)")
+   (concat "\\(" pre-regexp "\\)"
+           "[ \t]?";; drop 1 space
+           "\\(" post-regexp "\\)")
    "\\1 \\2"))
 
 (defun ef-rule-space-after-regexp (regexp)
@@ -112,7 +114,12 @@
                           "=~" "!~"
                           "**=" "**" "*"
                           "/")
-    (ef-rule-space-around "?" ":") ;;tertiary operator
+    ;;(ef-rule-space-around-regexp)
+    (ef-rule-space-between-regexp ef-end-regexp "\\?[^;]*:");;before ?
+    (ef-rule-space-between-regexp "\\?" "[^;]*:");;after ?
+    (ef-rule-space-between-regexp "\\?[^;]*[^ ]" ":");;before :
+    (ef-rule-space-between-regexp "\\?[^;]*:" ef-beginning-regexp);;after :
+    ;;(ef-rule-space-around "?" ":") ;;tertiary operator
     (ef-rule-space-after  "!" "{")
     (ef-rule-space-before "}")
     ;; advanced
@@ -174,7 +181,16 @@
         (append ef-ruby-mode-rule-list ef-prog-mode-rule-list))
   (setq ef-comment-rule-list
         (append ef-comment-rule-list
-                '((ef-rule-space-after "#=>")))))
+                '((ef-rule-space-after "#=>"))))
+  ;; bug in /
+  (setq ef-beginning-regexp
+        (concat "\\(?:/\\)?"
+                ef-beginning-regexp))
+  ;;(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
+  (setq ef-end-regexp
+        (concat "\\(?:" ef-end-regexp
+                "\\|" "/" "\\)"))
+  )
 
 (defun ef-text-mode-setup()
   (setq ef-rule-list ef-text-mode-rule-list))

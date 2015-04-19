@@ -142,7 +142,7 @@
     (mapc
      (lambda (rule)
        (save-excursion
-         (goto-char beg)
+         (goto-char (point-min))
          (let ((converted-rule (ef-convert-rule rule)))
            (while (re-search-forward (car converted-rule) nil t)
              (funcall func converted-rule)))))
