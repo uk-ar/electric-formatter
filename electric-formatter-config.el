@@ -32,14 +32,15 @@
 ;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
-;;(defvar ef-beginning-regexp "\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\|[*&]\\)")
 (defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
 (make-variable-buffer-local 'ef-beginning-regexp)
 
-;;(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|s\"\\)")
 (defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|\\s\"\\)")
-;;(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
 (make-variable-buffer-local 'ef-end-regexp)
+
+(defun ef-rule-space-between (pre-string post-string)
+  (ef-rule-space-between-regexp (regexp-quote pre-string)
+                                (regexp-quote post-string)))
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
@@ -80,8 +81,8 @@
 
 (defvar ef-text-mode-rule-list
   '(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-    ("\\([[:multibyte:]]\\)[ ]?\\([[:unibyte:]]\\)" . "\\1 \\2")
-    ("\\([[:unibyte:]]\\)[ ]?\\([[:multibyte:]]\\)" . "\\1 \\2")
+    (ef-rule-space-between-regexp "[[:multibyte:]]" "[[:unibyte:]]")
+    (ef-rule-space-between-regexp "[[:unibyte:]]" "[[:multibyte:]]")
     ;;https://github.com/zk-phi/electric-spacing
     (ef-rule-space-after ",")
     ))
@@ -92,7 +93,7 @@
     (ef-rule-space-around "=" "==" "==="
                           "=>" ">=" "<=" "<<=" ">>=" "=<"
                           ">" ">>" "<" "<<"
-                          "|" "||" "|="
+                          "||" "|=" ;; "|" TODO: conflict with ruby
                           "!="
                           "&" "&=" "&&"
                           "^" "^="
@@ -111,17 +112,39 @@
 (defvar ef-ruby-mode-rule-list
   '((ef-rule-space-around "..." ".."
                           "||=" "&&=" "<=>"
-                          "=~" "!~"
+                          "!~" "|"
                           "**=" "**" "*"
-                          "/")
-    ;;(ef-rule-space-around-regexp)
+                          "/" "=~")
+    ;; method parameter
+    (ef-rule-space-between-regexp "\\_>" "\\s\"")
+    ;;(ef-rule-space-between-regexp "\\w" ":[^:]")
+    ;;tertiary operator
     (ef-rule-space-between-regexp ef-end-regexp "\\?[^;]*:");;before ?
     (ef-rule-space-between-regexp "\\?" "[^;]*:");;after ?
     (ef-rule-space-between-regexp "\\?[^;]*[^ ]" ":");;before :
     (ef-rule-space-between-regexp "\\?[^;]*:" ef-beginning-regexp);;after :
-    ;;(ef-rule-space-around "?" ":") ;;tertiary operator
-    (ef-rule-space-after  "!" "{")
-    (ef-rule-space-before "}")
+    ;; multiple assign
+    (ef-rule-space-between "," "=")
+    (ef-rule-space-between ",*" "=")
+    (ef-rule-space-between "," "*")
+    (ef-rule-space-between-regexp (regexp-opt '("{" "do")) "|")
+    (ef-rule-space-between-regexp "|" (regexp-opt '("}" "end")))
+    (ef-rule-space-after "* =" "*=" ", =" ",=")
+    (ef-rule-space-between-regexp "\\(?:[;]\\|^\\)[ /t]*\\*" "=");;between *=
+    ;; block param
+    ;; after 1st |
+    (ef-rule-delete-space "\\(?:do\\|{\\)[^|]*|" ef-beginning-regexp)
+    ;; before 2nd |
+    (ef-rule-delete-space
+     "\\(?:do\\|{\\)[^|]*\\(?:|[^| ]*\\(?:[ ][^ |]+\\)*\\)" "|")
+    ;; space before/after block
+    (ef-rule-space-after  "{" "do")
+    (ef-rule-space-before "}" "end")
+    ;; hash keyword
+    (ef-rule-space-after-regexp "[{,][ \t]*\\w+:")
+    ;; block parameter separator
+    (ef-rule-space-after  ";")
+    (ef-rule-space-after  "!")
     ;; advanced
     ;; convert keyword
     ("\\_<and\\_>" . "&&")
@@ -151,7 +174,7 @@
       ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
       ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
       (ef-rule-space-around "?" ":") ;;tertiary operator
-      (ef-rule-space-around "/*" "/")
+      (ef-rule-space-around "/*" "/" "|")
       )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
@@ -182,7 +205,7 @@
   (setq ef-comment-rule-list
         (append ef-comment-rule-list
                 '((ef-rule-space-after "#=>"))))
-  ;; bug in /
+  ;; / is hundled as punctuation
   (setq ef-beginning-regexp
         (concat "\\(?:/\\)?"
                 ef-beginning-regexp))

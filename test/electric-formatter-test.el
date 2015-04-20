@@ -87,13 +87,23 @@
   (should
    (equal
     (ef-test-rule "a=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
-    "a =")))
+    "a ="))
+  (should
+   (equal
+    (ef-test-rule "1=" '("\\(\\w\\|\\s.\\)=" . "\\1 ="))
+    "1 ="))
+  )
 
 (ert-deftest ef-test-after-= ()
   (should
    (equal
     (ef-test-rule "=a" '("=\\(\\w\\)" . "= \\1"))
-    "= a")))
+    "= a"))
+  (should
+   (equal
+    (ef-test-rules "=1" (list (ef-rule-space-after "=")))
+    "= 1"))
+  )
 
 (ert-deftest ef-test-blank-lines ()
   (let ((rule '("\n[\n]+" . "\n\n")))
@@ -127,6 +137,10 @@
      (equal
       (ef-test-rules "a=b" (list (ef-rule-space-around "=")))
       "a = b"))
+    (should
+     (equal
+      (ef-test-rules "a=1" (list (ef-rule-space-around "=")))
+      "a = 1"))
     (should
      (equal
       (ef-test-rules "a  =  b" (list (ef-rule-space-around "=")))
@@ -392,6 +406,7 @@
 
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
+   (ef-test-region ");\n\n)" ");\n\n)"(+ (point-min) 2))
    ))
 
 ;; http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2foperator.html
@@ -420,13 +435,23 @@
    (ef-test-execute "a&&=b" "a &&= b")
    (ef-test-execute "a||=b" "a ||= b")
 
-   (ef-test-execute "foo,bar,baz=1,2,3" "foo, bar, baz = 1, 2, 3")
-   ;; (ef-test-execute "foo,=list()" "foo, = list()");; ,as single operator
-   ;; (ef-test-execute "foo,*rest=list2()" "foo, *rest = list2()")
-   (ef-test-execute "(foo,bar),baz=[1,2],3" "(foo, bar), baz = [1, 2], 3")
    (ef-test-execute "1..20" "1 .. 20")
    (ef-test-execute "'first'...'second'" "'first' ... 'second'")
    (ef-test-execute "/first/.../second/" "/first/ ... /second/")
+
+   ;; http://docs.ruby-lang.org/ja/2.0.0/doc/spec=2foperator.html#multiassign
+   (ef-test-execute "foo,bar,baz=1,2,3" "foo, bar, baz = 1, 2, 3")
+   (ef-test-execute "(foo,bar),baz=[1,2],3" "(foo, bar), baz = [1, 2], 3")
+   (ef-test-execute "foo,bar=[1,2]" "foo, bar = [1, 2]")
+   (ef-test-execute "*foo=1,2,3" "*foo = 1, 2, 3")
+   (ef-test-execute "foo,*bar=1,2,3" "foo, *bar = 1, 2, 3")
+   (ef-test-execute "foo,*rest=list2()" "foo, *rest = list2()")
+   (ef-test-execute "foo,*=list()" "foo, * = list()")
+   (ef-test-execute "foo,*=1,2,3" "foo, * = 1, 2, 3")
+   (ef-test-execute "foo,=1,2,3" "foo, = 1, 2, 3")
+   (ef-test-execute "foo,=list()" "foo, = list()")
+   (ef-test-execute "*=1,2,3" "* = 1, 2, 3")
+   (ef-test-execute ";*=1,2,3" ";* = 1, 2, 3")
    ;; http://docs.ruby-lang.org/ja/2.0.0/doc/symref.html
    ;; !
    (ef-test-execute "!me" "! me")
@@ -455,7 +480,13 @@
    (ef-test-execute "10|3" "10 | 3")
    (ef-test-execute "a||=yyy" "a ||= yyy")
    (ef-test-execute "xxx||yyy" "xxx || yyy")
-   ;;(ef-test-execute "5.times{|n| p n}")
+   ;; https://github.com/bbatsov/rubocop/blob/ca377951bb2ba17184d5ea9fb1bc8842097de1c9/spec/rubocop/cop/style/space_around_block_parame
+   (ef-test-execute "5.times{ |n| p n }")
+   (ef-test-execute "{ |a, b| p a, b }")
+   (ef-test-execute "{|a,b |p a,b}" "{ |a, b| p a, b }")
+   (ef-test-execute "{|a |p a,b}" "{ |a| p a, b }")
+   (ef-test-execute "do|a,b |p a,b end" "do |a, b| p a, b end")
+   (ef-test-execute "do|a |p a,b end" "do |a| p a, b end")
    (ef-test-execute "/xx(xx|xx)/")
    ;; +
    (ef-test-execute "10+3" "10 + 3")
@@ -468,7 +499,9 @@
    (ef-test-execute "2*3" "2 * 3")
    (ef-test-execute "2**3" "2 ** 3")
    (ef-test-execute "def xxx(*yy)")
-   ;;(ef-test-execute "x,*y=foo()" "x, *y = foo()")
+   (ef-test-execute "x,*y=foo()" "x, *y = foo()")
+   (ef-test-execute "foo(1,*[2,3,4])" "foo(1, *[2, 3, 4])")
+   (ef-test-execute "foo(1,*[])" "foo(1, *[])")
    (ef-test-execute "/xx*/")
    ;; /
    (ef-test-execute "10/3" "10 / 3")
@@ -484,9 +517,10 @@
    (ef-test-execute "::B" "::B")
    (ef-test-execute "foo::(bar)" "foo::(bar)")
    (ef-test-execute "a?b:c" "a ? b : c")
-   ;; (ef-test-execute "{key:value}" "{key: value}");; space after?
-   ;; (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
-   ;; (ef-test-execute "{a:'aaa',b:'bbb'}" "{a:'aaa', b:'bbb'}")
+   (ef-test-execute "{key:value,key1::value}"
+                    "{ key: value, key1: :value }");; space after?
+   (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
+   (ef-test-execute "{a:'aaa',b:'bbb'}" "{ a: 'aaa', b: 'bbb' }")
    ;; .
    (ef-test-execute "xxx.yyy")
    (ef-test-execute "1..20" "1 .. 20")
@@ -499,7 +533,7 @@
    (ef-test-execute "def foo(bar,baz)" "def foo(bar, baz)")
    (ef-test-execute "[:a,:b,c:]" "[:a, :b, c:]")
    (ef-test-execute "{:a=>1,:b=>2}.each{|key,val|}"
-                    "{ :a => 1, :b => 2 }.each{|key, val|}")
+                    "{ :a => 1, :b => 2 }.each{ |key, val| }")
    ;; <
    (ef-test-execute "3<5" "3 < 5")
    (ef-test-execute "3<=5" "3 <= 5")
@@ -537,7 +571,8 @@
    (ef-test-execute "'%04b%04b'%[3,~3]" "'%04b%04b' % [3, ~3]")
    (ef-test-execute "/xxx/=~yyy" "/xxx/ =~ yyy")
    (ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
-   ;;(ef-test-execute "~/xxx/" "~ /xxx/")
+   (ef-test-execute "~/xxx/");; handle as single operator
+   (ef-test-execute "~ /xxx/")
    ;; $
    (ef-test-execute "$xxx")
    (ef-test-execute "$_")
@@ -554,7 +589,7 @@
    ;; {
    ;; }
    (ef-test-execute "{1=>'11',3=>'333'}" "{ 1 => '11', 3 => '333' }")
-   ;; (ef-test-execute "5.times{|n|p n}" "5.times{|n| p n}")
+   (ef-test-execute "5.times{|n|p n}" "5.times{ |n| p n }")
    (ef-test-execute "/xx{2,3}/")
    (ef-test-execute "\"a is#{a}\"")
    ;; [
@@ -573,12 +608,15 @@
    ;; `
    (ef-test-execute "`ls`")
    ;;\
-   ;; (ef-test-execute "puts'abc\'def'" "puts 'abc\'def'")
-   (ef-test-execute "puts(3 \
+   ;;(ef-test-execute "puts:abc" "puts :abc")
+   (ef-test-execute "puts'abc\\\'def'" "puts 'abc\\\'def'")
+   (ef-test-execute "puts\"abc\\\"def\"" "puts \"abc\\\"def\"")
+   (ef-test-execute "puts('abc\\\'def')" "puts('abc\\\'def')")
+   (ef-test-execute "puts(3 \\
     + 4)")
    ;;;
    (ef-test-execute "a=3;" "a = 3;")
-   ;;(ef-test-execute "[1,2,3].each{|v;z|z=v*2...}" "[1,2,3].each{|v; z| z = v * 2 ... }")
+   (ef-test-execute "[1,2,3].each{|v;z|z=v*2}" "[1, 2, 3].each{ |v; z| z = v * 2 }")
 
    (ef-test-execute "+a")
    (ef-test-execute "-a")
@@ -594,7 +632,7 @@
    (ef-test-execute "reg!~str" "reg !~ str")
 
    (ef-test-execute "a===b" "a === b")
-   (ef-test-execute "a=b;c=d" "a = b;c = d")
+   (ef-test-execute "a=b;c=d" "a = b; c = d")
 
    (ef-test-execute "a=>b" "a => b")
    (ef-test-execute "a<=b" "a <= b")
