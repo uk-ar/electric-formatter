@@ -48,7 +48,7 @@
 (defun ef-test-rules (str rules)
   (erase-buffer)
   (save-excursion (insert str))
-  (electric-formatter-region-1
+  (ef-region
    (point-min) (point-max)
    (lambda (rule)
      (replace-match (cdr rule)))

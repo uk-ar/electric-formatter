@@ -134,7 +134,7 @@
       (goto-char (match-end 1)))
     ))
 
-(defun electric-formatter-region-1 (beg end func rules)
+(defun ef-region (beg end func rules)
   ;; TODO: integrate to buffer
   (save-restriction
     (narrow-to-region beg end)
@@ -158,7 +158,7 @@
         (beg (min beg end))
         (end (max beg end)))
     ;;end is moving
-    (electric-formatter-region-1
+    (ef-region
      beg end
      #'electric-formatter-region-func
      (append ef-rule-list ef-comment-rule-list))
