@@ -35,7 +35,8 @@
 (defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
 (make-variable-buffer-local 'ef-beginning-regexp)
 
-(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|\\s\"\\)")
+(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
+;; Don't add "\\_>" ,because for corner case like "/xxx/=~yyy" in ruby
 (make-variable-buffer-local 'ef-end-regexp)
 
 (defun ef-rule-space-between (pre-string post-string)
@@ -73,11 +74,14 @@
 (defun ef-rule-space-around (&rest strings)
   (ef-rule-space-around-regexp (regexp-opt strings)))
 
-;; todo regexp
-(defun ef-rule-delete-space (pre-regexp post-regexp)
+(defun ef-rule-delete-space-regexp (pre-regexp post-regexp)
   (cons
    (concat "\\(" pre-regexp "\\)" "[\t ]+" "\\(" post-regexp "\\)")
    "\\1\\2"))
+
+(defun ef-rule-delete-space (pre-string post-string)
+  (ef-rule-delete-space-regexp (regexp-quote pre-string)
+                               (regexp-quote post-string)))
 
 (defvar ef-text-mode-rule-list
   '(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
@@ -98,6 +102,7 @@
                           "&" "&=" "&&"
                           "^" "^="
                           "%" "%="
+                          "=~"
                           "/=" ;;"/"
                           "*=" ;;"*";; hard to support
                           "+" "+="
@@ -114,7 +119,7 @@
                           "||=" "&&=" "<=>"
                           "!~" "|"
                           "**=" "**" "*"
-                          "/" "=~")
+                          "/")
     ;; method parameter
     (ef-rule-space-between-regexp "\\_>" "\\s\"")
     ;;(ef-rule-space-between-regexp "\\w" ":[^:]")
@@ -133,9 +138,9 @@
     (ef-rule-space-between-regexp "\\(?:[;]\\|^\\)[ /t]*\\*" "=");;between *=
     ;; block param
     ;; after 1st |
-    (ef-rule-delete-space "\\(?:do\\|{\\)[^|]*|" ef-beginning-regexp)
+    (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|" ef-beginning-regexp)
     ;; before 2nd |
-    (ef-rule-delete-space
+    (ef-rule-delete-space-regexp
      "\\(?:do\\|{\\)[^|]*\\(?:|[^| ]*\\(?:[ ][^ |]+\\)*\\)" "|")
     ;; space before/after block
     (ef-rule-space-after  "{" "do")
@@ -145,6 +150,10 @@
     ;; block parameter separator
     (ef-rule-space-after  ";")
     (ef-rule-space-after  "!")
+    ;; overwrite operators
+    (ef-rule-delete-space-regexp "def \\s.+" "(")
+    (ef-rule-delete-space "def []" "=")
+    (ef-rule-delete-space "def []=" "(")
     ;; advanced
     ;; convert keyword
     ("\\_<and\\_>" . "&&")
@@ -152,8 +161,8 @@
 
 (defvar ef-python-mode-rule-list
   '(;;delete space for default param: foo(a=b)
-    (ef-rule-delete-space "[(,][^(,]+" "=")
-    (ef-rule-delete-space "[(,][^(,]+=" ef-beginning-regexp)
+    (ef-rule-delete-space-regexp "[(,][^(,]+" "=")
+    (ef-rule-delete-space-regexp "[(,][^(,]+=" ef-beginning-regexp)
     ))
 
 (defvar ef-c-mode-rule-list
@@ -165,14 +174,14 @@
                        "pair" "auto_ptr" "static_cast" "dynmaic_cast"
                        "const_cast" "reintepret_cast" "#import"))))
     `(;;delete space for keyword :#include <foo.h>
-      (ef-rule-delete-space (concat ,keyword-regexp "[\t ]+<")
+      (ef-rule-delete-space-regexp (concat ,keyword-regexp "[\t ]+<")
                             ef-beginning-regexp)
-      (ef-rule-delete-space (concat ,keyword-regexp "[^;\n]+")
+      (ef-rule-delete-space-regexp (concat ,keyword-regexp "[^;\n]+")
                             ">")
       ;; rvalue return func(param) value of right
       ;;(equal "b =& a" "b = &a")
-      ;; (ef-rule-delete-space "=&" ef-beginning-regexp)
-      ;; (ef-rule-delete-space "[;\n][ \t]*&" ef-beginning-regexp)
+      ;; (ef-rule-delete-space-regexp "=&" ef-beginning-regexp)
+      ;; (ef-rule-delete-space-regexp "[;\n][ \t]*&" ef-beginning-regexp)
       (ef-rule-space-around "?" ":") ;;tertiary operator
       (ef-rule-space-around "/*" "/" "|")
       )))
@@ -181,7 +190,7 @@
 (defvar ef-emacs-lisp-mode-rule-list
   '((ef-rule-space-after  ")" "\"" ".")
     (ef-rule-space-before "(" "\"" ".")
-    (ef-rule-delete-space "," ef-beginning-regexp);;regexp
+    (ef-rule-delete-space-regexp "," ef-beginning-regexp);;regexp
     ;;advanced
     ;;delete space trailing whitespaces :)\n)
     '(")[\n\t ]+)" . "))")
@@ -201,7 +210,8 @@
 
 (defun ef-ruby-mode-setup()
   (setq ef-rule-list
-        (append ef-ruby-mode-rule-list ef-prog-mode-rule-list))
+        ;; Must delete space in overwrite opearator
+        (append ef-prog-mode-rule-list ef-ruby-mode-rule-list))
   (setq ef-comment-rule-list
         (append ef-comment-rule-list
                 '((ef-rule-space-after "#=>"))))

@@ -177,7 +177,8 @@
   (should
    (equal
     (ef-test-rules "a-> b"
-                   (list (ef-rule-delete-space "->" ef-beginning-regexp)))
+                   (list (ef-rule-delete-space-regexp
+                          "->" ef-beginning-regexp)))
     "a->b"))))
 
 (ert-deftest ef-test-inside-paren ()
@@ -525,7 +526,8 @@
    (ef-test-execute "xxx.yyy")
    (ef-test-execute "1..20" "1 .. 20")
    (ef-test-execute "1...20" "1 ... 20")
-   ;;(ef-test-execute "if/^begin/../^end/" "if /^begin/ .. /^end/")
+   ;; ruby-mode has a bug with /
+   ;; (ef-test-execute "if/^begin/../^end/" "if /^begin/ .. /^end/")
    (ef-test-execute "/xx.xx/")
    ;; ,
    (ef-test-execute "a,b=[1,2,3]" "a, b = [1, 2, 3]")
@@ -570,6 +572,7 @@
    ;; ~
    (ef-test-execute "'%04b%04b'%[3,~3]" "'%04b%04b' % [3, ~3]")
    (ef-test-execute "/xxx/=~yyy" "/xxx/ =~ yyy")
+   (ef-test-execute "a/xxx/=~yyy" "a / xxx /= ~yyy")
    (ef-test-execute "/xxx/!~yyy" "/xxx/ !~ yyy")
    (ef-test-execute "~/xxx/");; handle as single operator
    (ef-test-execute "~ /xxx/")
@@ -600,6 +603,7 @@
    ;; (
    ;;)
    ;;(ef-test-execute "(true and false)")
+   (ef-test-execute "(true && false)")
    (ef-test-execute "p({})")
    ;; "
    (ef-test-execute "\"abc\"")
@@ -617,6 +621,20 @@
    ;;;
    (ef-test-execute "a=3;" "a = 3;")
    (ef-test-execute "[1,2,3].each{|v;z|z=v*2}" "[1, 2, 3].each{ |v; z| z = v * 2 }")
+
+   ;; http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2fdef.html
+   (ef-test-execute "@x = x; @y = y")
+   (ef-test-execute "other_vec.x == @x && other_vec.y == @y")
+   (ef-test-execute "def ==(other_vec)")
+   (ef-test-execute "def +(other_vec)")
+   (ef-test-execute "Vector2D.new(other_vec.x + @x, other_vec.y + @y)")
+   (ef-test-execute "def foo(x, *xs)")
+   (ef-test-execute "def bar(x, *)")
+   (ef-test-execute "def foo(arg0, arg1, arg2 = 10, *rest, &block)")
+   (ef-test-execute "def +@")
+   (ef-test-execute "def [](key)")
+   (ef-test-execute "def []=(key, value)")
+   (ef-test-execute "def `(arg)")
 
    (ef-test-execute "+a")
    (ef-test-execute "-a")
