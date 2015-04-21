@@ -35,7 +35,7 @@
 (defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
 (make-variable-buffer-local 'ef-beginning-regexp)
 
-(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
+(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\|;\\|[0-9]\\)")
 ;; Don't add "\\_>" ,because for corner case like "/xxx/=~yyy" in ruby
 (make-variable-buffer-local 'ef-end-regexp)
 
@@ -76,7 +76,9 @@
 
 (defun ef-rule-delete-space-regexp (pre-regexp post-regexp)
   (cons
-   (concat "\\(" pre-regexp "\\)" "[\t ]+" "\\(" post-regexp "\\)")
+   (concat "\\(" pre-regexp "\\)"
+           "[\t ]+";; drop all space
+           "\\(" post-regexp "\\)")
    "\\1\\2"))
 
 (defun ef-rule-delete-space (pre-string post-string)
@@ -141,7 +143,7 @@
     (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|" ef-beginning-regexp)
     ;; before 2nd |
     (ef-rule-delete-space-regexp
-     "\\(?:do\\|{\\)[^|]*\\(?:|[^| ]*\\(?:[ ][^ |]+\\)*\\)" "|")
+     "\\(?:do\\|{\\)[^|]*|[^|]*" "|")
     ;; space before/after block
     (ef-rule-space-after  "{" "do")
     (ef-rule-space-before "}" "end")
@@ -183,13 +185,18 @@
       ;; (ef-rule-delete-space-regexp "=&" ef-beginning-regexp)
       ;; (ef-rule-delete-space-regexp "[;\n][ \t]*&" ef-beginning-regexp)
       (ef-rule-space-around "?" ":") ;;tertiary operator
-      (ef-rule-space-around "/*" "/" "|")
+      (ef-rule-space-around "/*" "/" "|");; TODO: use comment-start
       )))
 
 ;;http://emacswiki.org/emacs/elisp-format.el
 (defvar ef-emacs-lisp-mode-rule-list
-  '((ef-rule-space-after  ")" "\"" ".")
-    (ef-rule-space-before "(" "\"" ".")
+  '((ef-rule-space-after  ")" "\"")
+    (ef-rule-space-before "(" "\"")
+    (ef-rule-space-between-regexp "\\." "[^0-9]")
+    ;;(ef-rule-space-before-regexp "\\.[ \t]*[^0-9]")
+    (ef-rule-space-between-regexp "[^0-9]" "\\.")
+    (ef-rule-space-after-regexp "[^0-9][ \t]*\\.")
+    ;; support float "."
     (ef-rule-delete-space-regexp "," ef-beginning-regexp);;regexp
     ;;advanced
     ;;delete space trailing whitespaces :)\n)
@@ -206,8 +213,6 @@
    ;;(ef-rule-space-after-regexp "\\'")
    ))
 
-(global-electric-formatter-mode 1)
-
 (defun ef-ruby-mode-setup()
   (setq ef-rule-list
         ;; Must delete space in overwrite opearator
@@ -215,11 +220,10 @@
   (setq ef-comment-rule-list
         (append ef-comment-rule-list
                 '((ef-rule-space-after "#=>"))))
-  ;; / is hundled as punctuation
+  ;; ruby-mode treat / as punctuation
   (setq ef-beginning-regexp
         (concat "\\(?:/\\)?"
                 ef-beginning-regexp))
-  ;;(defvar ef-end-regexp "\\(?:\\_>\\|\\w\\|\\s)\\|s\"\\)")
   (setq ef-end-regexp
         (concat "\\(?:" ef-end-regexp
                 "\\|" "/" "\\)"))
@@ -272,6 +276,8 @@
 
 (add-hook 'markdown-mode-hook
           'ef-text-mode-setup)
+
+(global-electric-formatter-mode)
 
 (provide 'electric-formatter-config)
 ;;; electric-formatter-config.el ends here

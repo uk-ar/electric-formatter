@@ -283,14 +283,12 @@
     (when post (save-excursion (insert post)))
     ;;(font-lock-fontify-buffer);; need?
     ;; (execute-kbd-macro (kbd "RET"))
-    (with-current-buffer (current-buffer)
-      (electric-formatter-electric)
-      )
+    (electric-formatter-post-self-insert-function)
     (should (equal (substring-no-properties (buffer-string))
                    (concat pre expect post)))
     (should (equal (point) (+ (length (concat pre expect)) 1)))
     ;; test twice
-    (electric-formatter-electric)
+    (electric-formatter-post-self-insert-function)
     (should (equal (substring-no-properties (buffer-string))
                    (concat pre expect post)))
     (should (equal (point) (+ (length (concat pre expect)) 1)))
@@ -313,16 +311,17 @@
 (ert-deftest ef-test-mode ()
   (ert-with-test-buffer (:name "electric-formatter")
     ;; default is on
+    (electric-formatter-mode 1)
     (should electric-formatter-mode)
-    (should (memq 'electric-formatter-electric post-self-insert-hook))
+    (should (memq 'electric-formatter-post-self-insert-function post-self-insert-hook))
     ;; turn off
     (electric-formatter-mode -1)
     (should-not electric-formatter-mode)
-    (should-not (memq 'electric-formatter-electric post-self-insert-hook))
+    (should-not (memq 'electric-formatter-post-self-insert-function post-self-insert-hook))
     ;; turn on
     (electric-formatter-mode 1)
     (should electric-formatter-mode)
-    (should (memq 'electric-formatter-electric post-self-insert-hook))
+    (should (memq 'electric-formatter-post-self-insert-function post-self-insert-hook))
 
     (should (< 2 (length ef-rule-list)))
     ))
@@ -390,8 +389,11 @@
    (ef-test-execute "a\"" "a \"") ;; in string
    (ef-test-execute "\"a" "\"a") ;; in string
 
+   (ef-test-execute "0.8" "0.8")
    (ef-test-execute "a." "a .")
    (ef-test-execute ".a" ". a")
+   (ef-test-execute "'(0.a)" "'(0 . a)")
+   (ef-test-execute "'(a.0)" "'(a . 0)")
 
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
@@ -452,7 +454,7 @@
    (ef-test-execute "foo,=1,2,3" "foo, = 1, 2, 3")
    (ef-test-execute "foo,=list()" "foo, = list()")
    (ef-test-execute "*=1,2,3" "* = 1, 2, 3")
-   (ef-test-execute ";*=1,2,3" ";* = 1, 2, 3")
+   (ef-test-execute ";*=1,2,3" "; * = 1, 2, 3")
    ;; http://docs.ruby-lang.org/ja/2.0.0/doc/symref.html
    ;; !
    (ef-test-execute "!me" "! me")

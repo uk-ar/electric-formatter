@@ -82,7 +82,7 @@
 ;;   (replace-regexp-in-string (car rule) (cdr rule) string))
 
 ;;hooked
-(defun electric-formatter-electric ()
+(defun electric-formatter-post-self-insert-function ()
   (undo-boundary)
   (electric-formatter-region
              (line-beginning-position) (point)))
@@ -136,18 +136,24 @@
 
 (defun ef-region (beg end func rules)
   ;; TODO: integrate to buffer
-  (save-restriction
-    (narrow-to-region beg end)
+  ;; narrowing is hard to integrate to other elisp (eg. align)
+  (let ((end-marker (set-marker (make-marker) end)))
     ;; dolist has problem with edebug?
-    (mapc
-     (lambda (rule)
-       (save-excursion
-         (goto-char (point-min))
-         (let ((converted-rule (ef-convert-rule rule)))
-           (while (re-search-forward (car converted-rule) nil t)
-             (funcall func converted-rule)))))
-     rules ;; Do not convert rules for easy debug
-     )))
+    (combine-after-change-calls
+      (mapc
+       (lambda (rule)
+         (save-excursion
+           (goto-char beg)
+           (let ((converted-rule (ef-convert-rule rule)))
+             (while (and (< (point) (marker-position end-marker))
+                         (re-search-forward (car converted-rule)
+                                            (marker-position end-marker) t))
+
+               (funcall func converted-rule)))))
+       rules ;; Do not convert rules for easy debug
+       ))
+    (set-marker end-marker nil)))
+
 
 ;;;###autoload
 (defun electric-formatter-region (&optional beg end)
@@ -190,14 +196,12 @@
 ;;;###autoload
 (define-minor-mode electric-formatter-mode
   "Toggle electric formatter."
-  :global t
   :lighter " EF"
   :group 'electric-formatter
   (if electric-formatter-mode
       (progn
-        (add-hook 'post-self-insert-hook #'electric-formatter-electric)
-        )
-    (remove-hook 'post-self-insert-hook #'electric-formatter-electric)))
+        (add-hook 'post-self-insert-hook #'electric-formatter-post-self-insert-function nil t))
+    (remove-hook 'post-self-insert-hook #'electric-formatter-post-self-insert-function t)))
 ;;post-self-insert-hook
 
 (defcustom electric-formatter-disable-modes nil
@@ -214,7 +218,7 @@
 
 ;; copy from global-auto-complete-mode
 ;;;###autoload
-(define-global-minor-mode global-electric-formatter-mode
+(define-globalized-minor-mode global-electric-formatter-mode
   electric-formatter-mode electric-formatter-mode-maybe
   ;; :init-value t has bug?
   :group 'electric-formatter)
