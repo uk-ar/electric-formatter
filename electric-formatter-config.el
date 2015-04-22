@@ -62,13 +62,13 @@
 (defun ef-rule-space-before (&rest strings)
   (ef-rule-space-before-regexp (regexp-opt strings)))
 
-(defun ef-rule-space-around-regexp (regexp)
+(defun ef-rule-space-around-regexp (regexp &optional pre-regexp post-regexp)
   (cons
-   (concat "\\(" ef-end-regexp "\\)"
+   (concat "\\(" (or pre-regexp ef-end-regexp) "\\)"
            "[ \t]?";; drop 1 space
            "\\(" "[ \t]*" regexp "\\)"
            "[ \t]?";; drop 1 space
-           "\\(" "[ \t]*" ef-beginning-regexp "\\)")
+           "\\(" "[ \t]*" (or post-regexp ef-beginning-regexp) "\\)")
    "\\1 \\2 \\3"))
 
 (defun ef-rule-space-around (&rest strings)
@@ -192,11 +192,11 @@
 (defvar ef-emacs-lisp-mode-rule-list
   '((ef-rule-space-after  ")" "\"")
     (ef-rule-space-before "(" "\"")
-    (ef-rule-space-between-regexp "\\." "[^0-9]")
-    ;;(ef-rule-space-before-regexp "\\.[ \t]*[^0-9]")
-    (ef-rule-space-between-regexp "[^0-9]" "\\.")
-    (ef-rule-space-after-regexp "[^0-9][ \t]*\\.")
+    ;; experimental
     ;; support float "."
+    (ef-rule-space-around-regexp "\\." nil "[^ \t]*?[[:alpha:]].*?)")
+    (ef-rule-space-around-regexp "\\." "([ \t]*[^ \t]*?[[:alpha:]][^ \t]*?")
+
     (ef-rule-delete-space-regexp "," ef-beginning-regexp);;regexp
     ;;advanced
     ;;delete space trailing whitespaces :)\n)

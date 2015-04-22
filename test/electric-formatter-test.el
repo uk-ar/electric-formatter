@@ -389,11 +389,18 @@
    (ef-test-execute "a\"" "a \"") ;; in string
    (ef-test-execute "\"a" "\"a") ;; in string
 
-   (ef-test-execute "0.8" "0.8")
-   (ef-test-execute "a." "a .")
-   (ef-test-execute ".a" ". a")
-   (ef-test-execute "'(0.a)" "'(0 . a)")
-   (ef-test-execute "'(a.0)" "'(a . 0)")
+   (ef-test-execute "'(0.8)")
+   (ef-test-execute "'(abe . bea)")
+   (ef-test-execute "'(0.0a0)" "'(0 . 0a0)")
+   (ef-test-execute "'(0.0a0 )" "'(0 . 0a0 )")
+   (ef-test-execute "'(0. 0a0)" "'(0 . 0a0)")
+   (ef-test-execute "'(0 .0a0)" "'(0 . 0a0)")
+   (ef-test-execute "'(0.0 a0)" "'(0.0 a0)")
+   (ef-test-execute "'(0a0.0)" "'(0a0 . 0)")
+   (ef-test-execute "'( 0a0.0)" "'( 0a0 . 0)")
+   (ef-test-execute "'(0a 0.0)" "'(0a 0.0)")
+   (ef-test-execute "'(0a0.0a0)" "'(0a0 . 0a0)")
+
 
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
