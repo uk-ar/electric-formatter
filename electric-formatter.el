@@ -112,16 +112,22 @@
 ;;(electric-formatter-region-1 '("\\w," . "\\1 ,"))
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-func (rule)
-  (let ((ppss
-         ;;match-end
+  (let ((end-ppss
          (save-match-data
            (save-excursion
-             (syntax-ppss (match-end 1))))))
+             (syntax-ppss (or (match-end 1)
+                              (match-end 0))))))
+        (beg-ppss
+         (save-match-data
+           (save-excursion
+             (syntax-ppss (or (match-beginning 1)
+                              (match-beginning 0)))))))
     (cond
      ;; in string
-     ((and (nth 3 ppss)));;nop
+     ;; TODO: beg-ppss
+     ((nth 3 end-ppss));;nop
      ;; in comment
-     ((nth 4 ppss)
+     ((or (nth 4 end-ppss) (nth 4 beg-ppss))
       ;; FIXME: member seems to be slow
       (when (member rule (ef-convert-rules ef-comment-rule-list))
         (replace-match (cdr rule))))
