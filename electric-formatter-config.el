@@ -35,7 +35,7 @@
 (defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
 (make-variable-buffer-local 'ef-beginning-regexp)
 
-(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\|;\\|[0-9]\\)")
+(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\|[0-9]\\)") ;; ;\\|
 ;; Don't add "\\_>" ,because for corner case like "/xxx/=~yyy" in ruby
 (make-variable-buffer-local 'ef-end-regexp)
 
@@ -110,7 +110,7 @@
                           "+" "+="
                           "-" "-="
                           )
-    (ef-rule-space-after  ",")
+    (ef-rule-space-after  "," ";")
     (ef-rule-space-before-regexp "\\s<")
     ;; Don't use syntax table because punctuations include ","
     ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
@@ -134,6 +134,7 @@
     (ef-rule-space-between "," "=")
     (ef-rule-space-between ",*" "=")
     (ef-rule-space-between "," "*")
+    (ef-rule-space-between ";" "*")
     (ef-rule-space-between-regexp (regexp-opt '("{" "do")) "|")
     (ef-rule-space-between-regexp "|" (regexp-opt '("}" "end")))
     (ef-rule-space-after "* =" "*=" ", =" ",=")

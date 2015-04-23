@@ -375,6 +375,7 @@
    (should electric-formatter-mode)
    ;; (should (eq (length ef-rule-list) 6))
    (ef-test-execute "a" "a")
+   (ef-test-execute "(foo)")
    ;; (electric-pair-mode 1)
    (ef-test-execute ")hoge" ") hoge")
    (ef-test-execute "hoge(" "hoge (")
@@ -775,7 +776,8 @@
 
     (ef-test-execute "#include < foo.h >" "#include <foo.h>")
     (ef-test-execute "vector < int > v1;deque < int > v2;"
-                     "vector <int> v1;deque <int> v2;")
+                     "vector <int> v1; deque <int> v2;")
+    (ef-test-execute "for(i = start; i < end; ++i)")
     (ef-test-region "int  a;\nchar b;" "int  a;\nchar b;" (+ (point-min) 2))
     ))
 
