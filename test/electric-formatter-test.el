@@ -401,7 +401,8 @@
    (ef-test-execute "'( 0a0.0)" "'( 0a0 . 0)")
    (ef-test-execute "'(0a 0.0)" "'(0a 0.0)")
    (ef-test-execute "'(0a0.0a0)" "'(0a0 . 0a0)")
-
+   (ef-test-execute "(setq a 0.8)")
+   (ef-test-execute "(setq ac-quick-help-delay 0.8)")
 
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
@@ -412,12 +413,14 @@
    (ef-test-execute "\"\"(" "\"\" (")
    (ef-test-execute ";a" "; a")
    (ef-test-execute ";;a" ";; a")
+   (ef-test-execute ";;;###autoload")
    (ef-test-execute ";a" "; a" nil "\n")
    (ef-test-execute ";a" "; a" "\n" nil)
 
    (ef-test-region ") )" "))"(+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    (ef-test-region ");\n\n)" ");\n\n)"(+ (point-min) 2))
+   (ef-test-region ";)\n\n)" ";)\n\n)"(+ (point-min) 2))
    ))
 
 ;; http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2foperator.html

@@ -235,7 +235,10 @@
 
 (defun ef-emacs-lisp-mode-setup()
   (setq ef-rule-list
-        (append ef-emacs-lisp-mode-rule-list)))
+        (append ef-emacs-lisp-mode-rule-list))
+  (setq ef-comment-rule-list
+        (append ef-comment-rule-list
+                '((ef-rule-delete-space ";;;" "###autoload")))))
 
 (defun ef-python-mode-setup()
   (setq ef-rule-list
