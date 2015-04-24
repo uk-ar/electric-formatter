@@ -74,11 +74,11 @@
 (defun ef-rule-space-around (&rest strings)
   (ef-rule-space-around-regexp (regexp-opt strings)))
 
-(defun ef-rule-delete-space-regexp (pre-regexp post-regexp)
+(defun ef-rule-delete-space-regexp (&optional pre-regexp post-regexp)
   (cons
-   (concat "\\(" pre-regexp "\\)"
+   (concat "\\(" (or pre-regexp ef-end-regexp) "\\)"
            "[\t ]+";; drop all space
-           "\\(" post-regexp "\\)")
+           "\\(" (or post-regexp ef-beginning-regexp) "\\)")
    "\\1\\2"))
 
 (defun ef-rule-delete-space (pre-string post-string)
@@ -141,7 +141,7 @@
     (ef-rule-space-between-regexp "\\(?:[;]\\|^\\)[ /t]*\\*" "=");;between *=
     ;; block param
     ;; after 1st |
-    (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|" ef-beginning-regexp)
+    (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|")
     ;; before 2nd |
     (ef-rule-delete-space-regexp
      "\\(?:do\\|{\\)[^|]*|[^|]*" "|")
@@ -194,10 +194,17 @@
   '((ef-rule-space-after  ")" "\"")
     (ef-rule-space-before "(" "\"")
     ;; experimental
-    ;; support float "."
-    (ef-rule-space-around-regexp "\\." nil "[^ \t]*?[[:alpha:]].*?)")
-    (ef-rule-space-around-regexp "\\." "([ \t]*[^ \t]*?[[:alpha:]][^ \t]*?")
+    (ef-rule-space-between-regexp "\\." "\\w*?[^ \t)0-9]")
+    (ef-rule-space-between-regexp "[[:alpha:]]\\w*?" "\\.")
+    ;; delete-between (optional pre post)
+    ;; "#include <" start
+    ;; "#include.*?" >
 
+    ;; (rule-name
+    ;;  ("" "")
+    ;;  ("" "")
+    ;;  (delete-between "" "")
+    ;;  )
     (ef-rule-delete-space-regexp "," ef-beginning-regexp);;regexp
     ;;advanced
     ;;delete space trailing whitespaces :)\n)

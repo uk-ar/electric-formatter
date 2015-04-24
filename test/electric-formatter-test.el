@@ -294,19 +294,19 @@
     (should (equal (point) (+ (length (concat pre expect)) 1)))
     ))
 
-(defmacro ef-test-region (string expect &optional point)
+(defmacro ef-test-region (string expect point)
   (declare (debug t))
   `(let ((point (or ,point (point-min))))
      (erase-buffer)
      (insert "\n")
      (insert ,string)
      (save-excursion (insert "\n"))
-     (goto-char , point)
+     (goto-char ,point)
      (electric-formatter-region (+ (point-min) 1) (- (point-max) 1))
      (should (equal (substring-no-properties
                      (buffer-substring (+ (point-min) 1) (- (point-max) 1)))
-                    ,expect))
-     (should (equal (point) , point))))
+                    ,(or expect string)))
+     (should (equal (point) ,point))))
 
 (ert-deftest ef-test-mode ()
   (ert-with-test-buffer (:name "electric-formatter")
@@ -391,18 +391,29 @@
    (ef-test-execute "\"a" "\"a") ;; in string
 
    (ef-test-execute "'(0.8)")
-   (ef-test-execute "'(abe . bea)")
-   (ef-test-execute "'(0.0a0)" "'(0 . 0a0)")
-   (ef-test-execute "'(0.0a0 )" "'(0 . 0a0 )")
-   (ef-test-execute "'(0. 0a0)" "'(0 . 0a0)")
+   (ef-test-execute "'(foo . bar)")
+   (ef-test-execute "'(0.0a0)" "'(0. 0a0)")
+   (ef-test-execute "'(0.0a0 )" "'(0. 0a0 )")
+   (ef-test-execute "'(0. 0a0)");; 0. means 0.0
    (ef-test-execute "'(0 .0a0)" "'(0 . 0a0)")
-   (ef-test-execute "'(0.0 a0)" "'(0.0 a0)")
-   (ef-test-execute "'(0a0.0)" "'(0a0 . 0)")
-   (ef-test-execute "'( 0a0.0)" "'( 0a0 . 0)")
-   (ef-test-execute "'(0a 0.0)" "'(0a 0.0)")
+   ;;(ef-test-execute "'(0.0 a0)" "'(0.0 a0)")
+   (ef-test-execute "'(0a0.0)" "'(0a0 .0)")
+   (ef-test-execute "'( 0a0.0)" "'( 0a0 .0)")
+   ;;(ef-test-execute "'(0a 0.0)" "'(0a 0.0)")
    (ef-test-execute "'(0a0.0a0)" "'(0a0 . 0a0)")
-   (ef-test-execute "(setq a 0.8)")
-   (ef-test-execute "(setq ac-quick-help-delay 0.8)")
+   (ef-test-execute "'(0a0. 0a0)" "'(0a0 . 0a0)")
+   (ef-test-execute "'(0a0 .0a0)" "'(0a0 . 0a0)")
+   (ef-test-execute "'(0a0 . 0a0)")
+   (ef-test-execute "'(0a0 .0)") ;; .0 means 0.0
+   (ef-test-execute "'(1. 0)")
+   (ef-test-execute "'(1 .0)")
+   (ef-test-execute "'(1 . 0)")
+   (ef-test-execute "'(0.(a))" "'(0. (a))")
+   (ef-test-execute "'(0.(1))" "'(0. (1))")
+   (ef-test-execute "'((a).0)" "'((a) .0)")
+   (ef-test-execute "'((1).0)" "'((1) .0)")
+   ;; TODO:support execute?
+   (ef-test-region "(setq a 0.8)\n(b)" "(setq a 0.8)\n(b)" (point))
 
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
@@ -417,7 +428,7 @@
    (ef-test-execute ";a" "; a" nil "\n")
    (ef-test-execute ";a" "; a" "\n" nil)
 
-   (ef-test-region ") )" "))"(+ (point-min) 2))
+   (ef-test-region ") )" "))" (+ (point-min) 2))
    (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
    (ef-test-region ");\n\n)" ");\n\n)"(+ (point-min) 2))
    (ef-test-region ";)\n\n)" ";)\n\n)"(+ (point-min) 2))
