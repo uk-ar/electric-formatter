@@ -126,11 +126,14 @@
     (ef-rule-space-between-regexp "\\_>" "\\s\"")
     ;;(ef-rule-space-between-regexp "\\w" ":[^:]")
     ;; ternary operator
-    ;;(ef-rule-space-around-regexp )
-    (ef-rule-space-between-regexp nil "\\?[^;]*?:");;before ?
+    ;;(ef-rule-space-around-regexp "[ \t]\\?" nil "[^;]*?:")
+    ;;(ef-rule-space-around-regexp "\\?" nil "[^;]*?:")
+    ;; "\\_<\\?" "\\?"
+    ;;(ef-rule-space-between-regexp nil "\\?[^;]*?:");;before ?
     (ef-rule-space-between-regexp "\\?" "[^;]*?:");;after ?
-    (ef-rule-space-between-regexp "\\?[^;]*[^ ]" ":");;before :
-    (ef-rule-space-between-regexp "\\?[^;]*:" nil);;after :
+
+    (ef-rule-space-between-regexp "[ \t]\\?[^;]*[^ ]" ":");;before :
+    (ef-rule-space-between-regexp "[ \t]\\?[^;]*:" nil);;after :
     ;; multiple assign
     (ef-rule-space-between "," "=")
     (ef-rule-space-between ",*" "=")

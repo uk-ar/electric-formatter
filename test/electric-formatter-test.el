@@ -470,7 +470,7 @@
    (ef-test-execute "def xxx?")
    (ef-test-execute "/xxx?/")
    (ef-test-execute "xx ? yy : zz")
-   ;;(ef-test-execute "xx? ? yy? : zz")
+   (ef-test-execute "xx? ? yy? : zz")
    ;; %
    (ef-test-execute "10%3" "10 % 3")
    (ef-test-execute "'04b'%3" "'04b' % 3")
@@ -523,7 +523,7 @@
    (ef-test-execute "A::B" "A::B")
    (ef-test-execute "::B" "::B")
    (ef-test-execute "foo::(bar)" "foo::(bar)")
-   (ef-test-execute "a?b:c" "a ? b : c")
+   (ef-test-execute "a?b:c" "a? b:c") ;; means a?({b: c})
    (ef-test-execute "{key:value,key1::value}"
                     "{ key: value, key1: :value }");; space after?
    (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
