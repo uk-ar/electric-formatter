@@ -208,66 +208,6 @@
     ",baz=[],qux=1):"))
   )
 
-;; bug in inside string
-
-(ert-deftest ef-test-regexp-space-after ()
-  (should
-   (equal
-    (ef-regexp
-     '((space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ("foo" . "bar"))
-     'space-after)
-    "\\([,=]\\)"
-    )))
-
-(ert-deftest ef-test-regexp-space-after-not-exist ()
-  (should
-   (equal
-    (ef-regexp
-     '((space-before . "=")
-       ("foo" . "bar"))
-     'space-after)
-    nil
-    )))
-
-(ert-deftest ef-test-regexp-space-before ()
-  (should
-   (equal
-    (ef-regexp
-     '((space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ("foo" . "bar"))
-     'space-before)
-    "\\(=\\)"
-    )))
-
-(ert-deftest ef-test-regexp-opt ()
-  (should
-   (equal
-    (ef-regexp-opt
-     '(("foo" . "bar")
-       (space-after . "=")
-       (space-after . ",")
-       (space-before . "=")
-       ))
-    `((,(concat "\\([,=]\\)" ef-beginning-regexp) . "\\1 \\2")
-      (,(concat ef-end-regexp "\\(=\\)") . "\\1 \\2")
-      ("foo" . "bar"))
-    )))
-
-(ert-deftest ef-test-regexp-opt-after-not-exist ()
-  (should
-   (equal
-    (ef-regexp-opt
-     '(("foo" . "bar")
-       (space-before . "=")))
-    `((,(concat ef-end-regexp "\\(=\\)") . "\\1 \\2")
-      ("foo" . "bar"))
-    )))
-
 (ert-deftest ef-test-convert-rules ()
   (should
    (equal (ef-convert-rules '((ef-rule-space-after  ")" "\"" ".")))

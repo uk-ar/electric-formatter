@@ -41,64 +41,11 @@
 (defvar ef-comment-rule-list nil)
 (make-variable-buffer-local 'ef-comment-rule-list)
 
-(defun ef-regexp (formatter-list symbol)
-  (let ((strings
-         (mapcar 'cdr
-                 (cl-remove-if-not
-                  (lambda (elem) (eq (car elem) symbol))
-                  formatter-list))))
-    (if strings
-        (regexp-opt strings t))))
-
-(defun ef-regexp-opt (formatter-list)
-  (delq
-   nil
-   (append
-    (let ((space-after
-           (ef-regexp formatter-list 'space-after))
-          (space-before
-           (ef-regexp formatter-list 'space-before)))
-      (list
-       (if space-after
-           (cons
-            (concat space-after ef-beginning-regexp)
-            "\\1 \\2"))
-       (if space-before
-           (cons
-            (concat ef-end-regexp space-before)
-            "\\1 \\2"))))
-    (cl-remove-if-not
-     '(lambda (elem)
-        (stringp (car elem)))
-     formatter-list))))
-
-(defun ef-format (string rule-list)
-  (cl-reduce #'ef-format-1
-          (cons
-           string
-           (ef-regexp-opt rule-list))))
-
-;; (defun ef-format-1 (string rule)
-;;   (replace-regexp-in-string (car rule) (cdr rule) string))
-
 ;;hooked
 (defun electric-formatter-post-self-insert-function ()
   (undo-boundary)
   (electric-formatter-region
              (line-beginning-position) (point)))
-
-(defun ef-range (start end rule-list)
-  ;; must go to after inserted region
-  ;; save-execursion cause bug
-  (let* ((str (buffer-substring-no-properties start end))
-         (to-str (ef-format str rule-list)))
-    (unless (equal str to-str)
-      (delete-region start end)
-      (goto-char (min start end))
-      (insert to-str)
-      (cons (min start end) (point))
-      ;;(save-excursion)
-      )))
 
 (defun ef-convert-rule (rule)
   (if (symbolp (car rule))
@@ -109,7 +56,6 @@
 (defun ef-convert-rules (rules)
   (mapcar 'ef-convert-rule rules))
 
-;;(electric-formatter-region-1 '("\\w," . "\\1 ,"))
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-func (rule)
   (let ((end-ppss
