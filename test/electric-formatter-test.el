@@ -294,6 +294,7 @@
     (should (equal (point) (+ (length (concat pre expect)) 1)))
     ))
 
+;; TODO: Change point to offset
 (defmacro ef-test-region (string expect point)
   (declare (debug t))
   `(let ((point (or ,point (point-min))))
@@ -392,26 +393,6 @@
 
    (ef-test-execute "'(0.8)")
    (ef-test-execute "'(foo . bar)")
-   (ef-test-execute "'(0.0a0)" "'(0. 0a0)")
-   (ef-test-execute "'(0.0a0 )" "'(0. 0a0 )")
-   (ef-test-execute "'(0. 0a0)");; 0. means 0.0
-   (ef-test-execute "'(0 .0a0)" "'(0 . 0a0)")
-   ;;(ef-test-execute "'(0.0 a0)" "'(0.0 a0)")
-   (ef-test-execute "'(0a0.0)" "'(0a0 .0)")
-   (ef-test-execute "'( 0a0.0)" "'( 0a0 .0)")
-   ;;(ef-test-execute "'(0a 0.0)" "'(0a 0.0)")
-   (ef-test-execute "'(0a0.0a0)" "'(0a0 . 0a0)")
-   (ef-test-execute "'(0a0. 0a0)" "'(0a0 . 0a0)")
-   (ef-test-execute "'(0a0 .0a0)" "'(0a0 . 0a0)")
-   (ef-test-execute "'(0a0 . 0a0)")
-   (ef-test-execute "'(0a0 .0)") ;; .0 means 0.0
-   (ef-test-execute "'(1. 0)")
-   (ef-test-execute "'(1 .0)")
-   (ef-test-execute "'(1 . 0)")
-   (ef-test-execute "'(0.(a))" "'(0. (a))")
-   (ef-test-execute "'(0.(1))" "'(0. (1))")
-   (ef-test-execute "'((a).0)" "'((a) .0)")
-   (ef-test-execute "'((1).0)" "'((1) .0)")
    ;; TODO:support execute?
    (ef-test-region "(setq a 0.8)\n(b)" "(setq a 0.8)\n(b)" (point))
 
@@ -489,6 +470,7 @@
    (ef-test-execute "def xxx?")
    (ef-test-execute "/xxx?/")
    (ef-test-execute "xx ? yy : zz")
+   ;;(ef-test-execute "xx? ? yy? : zz")
    ;; %
    (ef-test-execute "10%3" "10 % 3")
    (ef-test-execute "'04b'%3" "'04b' % 3")
@@ -546,6 +528,7 @@
                     "{ key: value, key1: :value }");; space after?
    (ef-test-execute "{:a=>'aaa',:b=>'bbb'}" "{ :a => 'aaa', :b => 'bbb' }")
    (ef-test-execute "{a:'aaa',b:'bbb'}" "{ a: 'aaa', b: 'bbb' }")
+   ;; (ef-test-execute "x = w ? {a:3}:4" "x = w ? {a: 3}: 4")
    ;; .
    (ef-test-execute "xxx.yyy")
    (ef-test-execute "1..20" "1 .. 20")

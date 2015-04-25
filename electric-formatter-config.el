@@ -45,9 +45,9 @@
 
 (defun ef-rule-space-between-regexp (pre-regexp post-regexp)
   (cons
-   (concat "\\(" pre-regexp "\\)"
+   (concat "\\(" (or pre-regexp ef-end-regexp) "\\)"
            "[ \t]?";; drop 1 space
-           "\\(" post-regexp "\\)")
+           "\\(" (or post-regexp ef-beginning-regexp) "\\)")
    "\\1 \\2"))
 
 (defun ef-rule-space-after-regexp (regexp)
@@ -117,7 +117,7 @@
     ))
 
 (defvar ef-ruby-mode-rule-list
-  '((ef-rule-space-around "..." ".."
+  `((ef-rule-space-around "..." ".."
                           "||=" "&&=" "<=>"
                           "!~" "|"
                           "**=" "**" "*"
@@ -125,27 +125,28 @@
     ;; method parameter
     (ef-rule-space-between-regexp "\\_>" "\\s\"")
     ;;(ef-rule-space-between-regexp "\\w" ":[^:]")
-    ;;tertiary operator
-    (ef-rule-space-between-regexp ef-end-regexp "\\?[^;]*:");;before ?
-    (ef-rule-space-between-regexp "\\?" "[^;]*:");;after ?
+    ;; ternary operator
+    ;;(ef-rule-space-around-regexp )
+    (ef-rule-space-between-regexp nil "\\?[^;]*?:");;before ?
+    (ef-rule-space-between-regexp "\\?" "[^;]*?:");;after ?
     (ef-rule-space-between-regexp "\\?[^;]*[^ ]" ":");;before :
-    (ef-rule-space-between-regexp "\\?[^;]*:" ef-beginning-regexp);;after :
+    (ef-rule-space-between-regexp "\\?[^;]*:" nil);;after :
     ;; multiple assign
     (ef-rule-space-between "," "=")
     (ef-rule-space-between ",*" "=")
     (ef-rule-space-between "," "*")
     (ef-rule-space-between ";" "*")
-    (ef-rule-space-between-regexp (regexp-opt '("{" "do")) "|")
-    (ef-rule-space-between-regexp "|" (regexp-opt '("}" "end")))
+    (ef-rule-space-between-regexp ,(regexp-opt '("{" "do")) "|")
+    (ef-rule-space-between-regexp "|" ,(regexp-opt '("}" "end")))
     (ef-rule-space-after "* =" "*=" ", =" ",=")
     (ef-rule-space-between-regexp "\\(?:[;]\\|^\\)[ /t]*\\*" "=");;between *=
-    ;; block param
+    ;; block param(advance)
     ;; after 1st |
-    (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|")
+    (ef-rule-delete-space-regexp "\\(?:do\\|{\\)[^|]*|" nil)
     ;; before 2nd |
     (ef-rule-delete-space-regexp
      "\\(?:do\\|{\\)[^|]*|[^|]*" "|")
-    ;; space before/after block
+    ;; space before/after block(advance?)
     (ef-rule-space-after  "{" "do")
     (ef-rule-space-before "}" "end")
     ;; hash keyword
@@ -165,7 +166,7 @@
 (defvar ef-python-mode-rule-list
   '(;;delete space for default param: foo(a=b)
     (ef-rule-delete-space-regexp "[(,][^(,]+" "=")
-    (ef-rule-delete-space-regexp "[(,][^(,]+=" ef-beginning-regexp)
+    (ef-rule-delete-space-regexp "[(,][^(,]+=" nil)
     ))
 
 (defvar ef-c-mode-rule-list
@@ -177,10 +178,10 @@
                        "pair" "auto_ptr" "static_cast" "dynmaic_cast"
                        "const_cast" "reintepret_cast" "#import"))))
     `(;;delete space for keyword :#include <foo.h>
-      (ef-rule-delete-space-regexp (concat ,keyword-regexp "[\t ]+<")
-                            ef-beginning-regexp)
-      (ef-rule-delete-space-regexp (concat ,keyword-regexp "[^;\n]+")
-                            ">")
+      (ef-rule-delete-space-regexp
+       ,(concat keyword-regexp "[\t ]+<") nil)
+      (ef-rule-delete-space-regexp
+       ,(concat keyword-regexp "[^;\n]+") ">")
       ;; rvalue return func(param) value of right
       ;;(equal "b =& a" "b = &a")
       ;; (ef-rule-delete-space-regexp "=&" ef-beginning-regexp)
@@ -194,22 +195,20 @@
   '((ef-rule-space-after  ")" "\"")
     (ef-rule-space-before "(" "\"")
     ;; experimental
-    (ef-rule-space-between-regexp "\\." "\\w*?[^ \t)0-9]")
-    (ef-rule-space-between-regexp "[[:alpha:]]\\w*?" "\\.")
-    ;; delete-between (optional pre post)
-    ;; "#include <" start
-    ;; "#include.*?" >
+    ;; including . in symbol is not invalid
+    ;;(ef-rule-space-between-regexp "\\." "\\w*?[^ \t)0-9]")
+    ;;(ef-rule-space-between-regexp "[[:alpha:]]\\w*?" "\\.")
 
     ;; (rule-name
     ;;  ("" "")
     ;;  ("" "")
     ;;  (delete-between "" "")
     ;;  )
-    (ef-rule-delete-space-regexp "," ef-beginning-regexp);;regexp
+    (ef-rule-delete-space-regexp "," nil);;regexp
     ;;advanced
     ;;delete space trailing whitespaces :)\n)
-    '(")[\n\t ]+)" . "))")
-    '("\n[\n]+" . "\n\n")
+    (")[\n\t ]+)" . "))")
+    ("\n[\n]+" . "\n\n")
     ))
 
 (setq-default ef-rule-list ef-prog-mode-rule-list)

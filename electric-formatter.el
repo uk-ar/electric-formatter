@@ -102,8 +102,8 @@
 
 (defun ef-convert-rule (rule)
   (if (symbolp (car rule))
-      ;;(apply (car rule) (cdr rule))
-      (eval rule)
+      (apply (car rule) (cdr rule))
+      ;;(eval rule)
     rule));; regexp
 
 (defun ef-convert-rules (rules)
