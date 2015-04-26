@@ -621,6 +621,9 @@
     (ef-test-execute "a=b=c" "a = b = c")
     (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
                      "def foo(bar='bar', baz=[], qux=1):")
+    ;; def keyword_argment(foo = 4, bar = 'baz'):
+    ;; foo=3;
+    ;; bar='baz'
     ))
 
 (ert-deftest ef-test-in-c ()
@@ -716,6 +719,7 @@
                      "vector <int> v1; deque <int> v2;")
     (ef-test-execute "for(i = start; i < end; ++i)")
     (ef-test-region "int  a;\nchar b;" "int  a;\nchar b;" (+ (point-min) 2))
+    (ef-test-region "//\n\n\n//" "//\n\n//"(+ (point-min) 2))
     ))
 
 (ert-deftest ef-test-in-org ()
