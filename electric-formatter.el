@@ -35,9 +35,11 @@
 
 (require 'cl-lib)
 ;;; Code:
+;; TODO: rename to ef-rules
 (defvar ef-rule-list nil)
 (make-variable-buffer-local 'ef-rule-list)
 
+;; TODO: rename to ef-comment-rules
 (defvar ef-comment-rule-list nil)
 (make-variable-buffer-local 'ef-comment-rule-list)
 
@@ -61,7 +63,7 @@
   (mapcar 'ef-convert-rule rules))
 
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
-(defun electric-formatter-region-func (rule)
+(defun electric-formatter-region-func (rule rules comment-rules)
   (let ((end-ppss
          (save-match-data
            (save-excursion
@@ -79,10 +81,10 @@
      ;; in comment
      ((or (nth 4 end-ppss) (nth 4 beg-ppss))
       ;; FIXME: member seems to be slow
-      (when (member rule (ef-convert-rules ef-comment-rule-list))
+      (when (member rule (ef-convert-rules comment-rules))
         (replace-match (cdr rule))))
      (t
-      (when (member rule (ef-convert-rules ef-rule-list))
+      (when (member rule (ef-convert-rules rules))
         (replace-match (cdr rule)))))
     ;; this is for overlapped regexp match
     (when (and (match-end 1)
@@ -104,15 +106,14 @@
              (while (and (< (point) (marker-position end-marker))
                          (re-search-forward (car converted-rule)
                                             (marker-position end-marker) t))
-
-               (funcall func converted-rule)))))
+               (funcall func converted-rule rules comment-rules)))))
        (append rules comment-rules);; Do not convert rules for easy debug
        ))
     (set-marker end-marker nil)))
 
 
 ;;;###autoload
-(defun electric-formatter-region (&optional beg end)
+(defun electric-formatter-region (beg end &optional rules comment-rules)
   (interactive "r")
   (let ((pos (point))
         (eobp (eobp))
@@ -127,7 +128,8 @@
     (ef-region
      beg end
      #'electric-formatter-region-func
-     ef-rule-list ef-comment-rule-list)
+     (or rules ef-rule-list)
+     (or comment-rules ef-comment-rule-list))
     ;;(electric-formatter-electric-1 beg end)
     (cond
      ((= beg pos)
@@ -146,10 +148,12 @@
     ))
 
 ;;;###autoload
-(defun electric-formatter-buffer ()
+(defun electric-formatter-buffer (&optional rules comment-rules)
   (interactive)
-  (electric-formatter-region (point-min) (point-max))
-  )
+  (electric-formatter-region
+   (point-min) (point-max)
+   (or rules ef-rule-list)
+   (or comment-rules ef-comment-rule-list)))
 
 ;;(assoc-default 'space-after ef-rule-list)
 

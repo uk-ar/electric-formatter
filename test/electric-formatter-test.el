@@ -48,11 +48,7 @@
 (defun ef-test-rules (str rules)
   (erase-buffer)
   (save-excursion (insert str))
-  (ef-region
-   (point-min) (point-max)
-   (lambda (rule)
-     (replace-match (cdr rule)))
-   rules nil)
+  (electric-formatter-buffer rules)
   (substring-no-properties (buffer-string)))
 
 (ert-deftest ef-test-comment ()
