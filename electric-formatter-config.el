@@ -32,10 +32,10 @@
 ;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
-(defvar ef-beginning-regexp "\\(?:\\|+\\|-\\|~\\|!\\)?\\(?:\\_<\\|\\w\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)")
+(defvar ef-beginning-regexp (concat (regexp-opt '("+" "-" "~" "!")) "?\\(?:\\<\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)"))
 (make-variable-buffer-local 'ef-beginning-regexp)
-
-(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\|[0-9]\\)") ;; ;\\|
+;;\\w include 0-9
+(defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
 ;; Don't add "\\_>" ,because for corner case like "/xxx/=~yyy" in ruby
 (make-variable-buffer-local 'ef-end-regexp)
 
@@ -111,6 +111,7 @@
                           "-" "-="
                           )
     (ef-rule-space-after  "," ";")
+    ;; Space before single comment
     (ef-rule-space-before-regexp "\\s<")
     ;; Don't use syntax table because punctuations include ","
     ;;(cons (concat "\\(" ef-end-regexp "\\)" "\\(\\s.\\)") "\\1 \\2")
@@ -168,8 +169,8 @@
 
 (defvar ef-python-mode-rule-list
   '(;;delete space for default param: foo(a=b)
-    (ef-rule-delete-space-regexp "[(,][^(,]+" "=")
-    (ef-rule-delete-space-regexp "[(,][^(,]+=" nil)
+    (ef-rule-delete-space-regexp "[(,][^(,)]+?" "=")
+    (ef-rule-delete-space-regexp "[(,][^(,)]+?=" nil)
     ))
 
 (defvar ef-c-mode-rule-list
@@ -216,12 +217,15 @@
 
 (setq-default ef-rule-list ef-prog-mode-rule-list)
 
+;; TODO:integrate to text mode
 (setq-default
  ef-comment-rule-list
- '(;;Space after single comment
-   (ef-rule-space-after-regexp "\\s<")
-   ;;(ef-rule-space-after-regexp "\\'")
-   ))
+ (append
+  ef-text-mode-rule-list
+  '(;;Space after single comment
+    (ef-rule-space-after-regexp "\\s<")
+    ;;(ef-rule-space-after-regexp "\\'")
+    )))
 
 (defun ef-ruby-mode-setup()
   (setq ef-rule-list

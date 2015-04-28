@@ -52,7 +52,7 @@
    (point-min) (point-max)
    (lambda (rule)
      (replace-match (cdr rule)))
-   (ef-convert-rules rules))
+   rules nil)
   (substring-no-properties (buffer-string)))
 
 (ert-deftest ef-test-comment ()
@@ -235,7 +235,7 @@
     ))
 
 ;; TODO: Change point to offset
-(defmacro ef-test-region (string expect point)
+(defmacro* ef-test-region (string &optional (expect string) (point '(point)))
   (declare (debug t))
   `(let ((point (or ,point (point-min))))
      (erase-buffer)
@@ -304,8 +304,8 @@
    (ef-test-region "1,2" "1, 2" (point-max))
    ;; inside region
    (ef-test-region "1,2" "1, 2" (+ (point-min) 2))
-   (ef-test-region "a\n\na"   "a\n\na"  (+ (point-min) 2))
-   (ef-test-region "a\n\n\na" "a\n\na"(+ (point-min) 2))
+   (ef-test-region "a\n\na")
+   (ef-test-region "a\n\n\na" "a\n\na")
    ))
 
 (ert-deftest ef-test-in-elisp ()
@@ -333,8 +333,7 @@
 
    (ef-test-execute "'(0.8)")
    (ef-test-execute "'(foo . bar)")
-   ;; TODO:support execute?
-   (ef-test-region "(setq a 0.8)\n(b)" "(setq a 0.8)\n(b)" (point))
+   (ef-test-region "(setq a 0.8)\n(b)")
 
    (ef-test-execute "\"a\"a" "\"a\" a") ;; in string
    (ef-test-execute "\"a\"a" "\"a\" a" "\n") ;; in string
@@ -349,10 +348,10 @@
    (ef-test-execute ";a" "; a" nil "\n")
    (ef-test-execute ";a" "; a" "\n" nil)
 
-   (ef-test-region ") )" "))" (+ (point-min) 2))
-   (ef-test-region ") \n \n )" "))"(+ (point-min) 2))
-   (ef-test-region ");\n\n)" ");\n\n)"(+ (point-min) 2))
-   (ef-test-region ";)\n\n)" ";)\n\n)"(+ (point-min) 2))
+   (ef-test-region ") )" "))")
+   (ef-test-region ") \n \n )" "))" )
+   (ef-test-region ");\n\n)")
+   (ef-test-region ";)\n\n)")
    ))
 
 ;; http://docs.ruby-lang.org/ja/1.9.3/doc/spec=2foperator.html
@@ -621,9 +620,10 @@
     (ef-test-execute "a=b=c" "a = b = c")
     (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
                      "def foo(bar='bar', baz=[], qux=1):")
-    ;; def keyword_argment(foo = 4, bar = 'baz'):
-    ;; foo=3;
-    ;; bar='baz'
+    (ef-test-region "print(a)\nfoo=1"
+                    "print(a)\nfoo = 1")
+    (ef-test-region "def foo(bar = 4, baz = 'qux'):\nfoo=3"
+                    "def foo(bar=4, baz='qux'):\nfoo = 3")
     ))
 
 (ert-deftest ef-test-in-c ()
@@ -718,8 +718,9 @@
     (ef-test-execute "vector < int > v1;deque < int > v2;"
                      "vector <int> v1; deque <int> v2;")
     (ef-test-execute "for(i = start; i < end; ++i)")
-    (ef-test-region "int  a;\nchar b;" "int  a;\nchar b;" (+ (point-min) 2))
-    (ef-test-region "//\n\n\n//" "//\n\n//"(+ (point-min) 2))
+    ;; already align
+    (ef-test-region "int  a;\nchar b;")
+    (ef-test-region "//\n\n\n//" "//\n\n//")
     ))
 
 (ert-deftest ef-test-in-org ()

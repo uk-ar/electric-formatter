@@ -42,10 +42,14 @@
 (make-variable-buffer-local 'ef-comment-rule-list)
 
 ;;hooked
-(defun electric-formatter-post-self-insert-function ()
+(defun electric-formatter-current ()
   (undo-boundary)
+  ;; TODO: from end to beginning
   (electric-formatter-region
              (line-beginning-position) (point)))
+
+(defalias 'electric-formatter-post-self-insert-function
+  'electric-formatter-current)
 
 (defun ef-convert-rule (rule)
   (if (symbolp (car rule))
@@ -86,7 +90,7 @@
       (goto-char (match-end 1)))
     ))
 
-(defun ef-region (beg end func rules)
+(defun ef-region (beg end func rules comment-rules)
   ;; TODO: integrate to buffer
   ;; narrowing is hard to integrate to other elisp (eg. align)
   (let ((end-marker (set-marker (make-marker) end)))
@@ -102,7 +106,7 @@
                                             (marker-position end-marker) t))
 
                (funcall func converted-rule)))))
-       rules ;; Do not convert rules for easy debug
+       (append rules comment-rules);; Do not convert rules for easy debug
        ))
     (set-marker end-marker nil)))
 
@@ -116,10 +120,14 @@
         (beg (min beg end))
         (end (max beg end)))
     ;;end is moving
+    ;; (ef-region
+    ;;  beg end
+    ;;  #'electric-formatter-region-func
+    ;;  (append ef-rule-list ef-comment-rule-list))
     (ef-region
      beg end
      #'electric-formatter-region-func
-     (append ef-rule-list ef-comment-rule-list))
+     ef-rule-list ef-comment-rule-list)
     ;;(electric-formatter-electric-1 beg end)
     (cond
      ((= beg pos)
