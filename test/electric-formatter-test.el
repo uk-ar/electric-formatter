@@ -151,19 +151,19 @@
     (org-mode)
     (should
      (equal
-      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([0-9A-Za-z]\\)"
                                 . "\\1 \\2")))
       "あ aあ"))
     (should
      (equal
-      (ef-test-rules "あaあ" '(("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+      (ef-test-rules "あaあ" '(("\\([0-9A-Za-z]\\)\\([[:multibyte:]]\\)"
                                 . "\\1 \\2")))
       "あa あ"))
     (should
      (equal
-      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([[:unibyte:]]\\)"
+      (ef-test-rules "あaあ" '(("\\([[:multibyte:]]\\)\\([0-9A-Za-z]\\)"
                                 . "\\1 \\2")
-                               ("\\([[:unibyte:]]\\)\\([[:multibyte:]]\\)"
+                               ("\\([0-9A-Za-z]\\)\\([[:multibyte:]]\\)"
                                 . "\\1 \\2")))
       "あ a あ"))
     ))
@@ -620,6 +620,7 @@
                     "print(a)\nfoo = 1")
     (ef-test-region "def foo(bar = 4, baz = 'qux'):\nfoo=3"
                     "def foo(bar=4, baz='qux'):\nfoo = 3")
+    (ef-test-execute "foo(bar = 'bar', baz = [], qux = 1)");; func call
     ))
 
 (ert-deftest ef-test-in-c ()

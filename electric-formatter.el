@@ -25,7 +25,7 @@
 
 ;; Author: Yuuki Arisawa <yuuki.ari@gmail.com>
 ;; URL: https://github.com/uk-ar/electric-formatter
-;; Package-Requires: ((cl-lib "0.5"))
+;; Package-Requires: ((cl-lib "0.5") (anaphora "1.0.0"))
 ;; Created: 1 April 2015
 ;; Version: 1.0
 ;; Keywords: region formatter
@@ -34,6 +34,7 @@
 ;;; Commentary:
 
 (require 'cl-lib)
+;;(require 'anaphora)
 ;;; Code:
 ;; TODO: rename to ef-rules
 (defvar ef-rule-list nil)
@@ -64,20 +65,26 @@
 
 ;;http://kouzuka.blogspot.jp/2011/03/replace-regexp-replace-multi-pairs.html?m=1
 (defun electric-formatter-region-func (rule rules comment-rules)
-  (let ((end-ppss
-         (save-match-data
-           (save-excursion
-             (syntax-ppss (or (match-end 1)
-                              (match-end 0))))))
-        (beg-ppss
-         (save-match-data
-           (save-excursion
-             (syntax-ppss (or (match-beginning 1)
-                              (match-beginning 0)))))))
+  (let* ((end (or (match-end 1)
+                  (match-end 0)))
+         ;; marker didnot work...
+         ;;(end-marker (set-marker (make-marker) (+ 1 end)))
+         (end-ppss
+          (save-match-data
+            (save-excursion
+              (syntax-ppss end))))
+         (beg-ppss
+          (save-match-data
+            (save-excursion
+              (syntax-ppss (or (match-beginning 1)
+                               (match-beginning 0)))))))
     (cond
      ;; in string
      ;; TODO: beg-ppss
-     ((nth 3 end-ppss));;nop
+     ((nth 3 end-ppss)
+      ;; this is for overlapped regexp match
+      (goto-char (+ 1 (match-beginning 0)))
+      );;nop
      ;; in comment
      ((or (nth 4 end-ppss) (nth 4 beg-ppss))
       ;; FIXME: member seems to be slow
@@ -86,31 +93,44 @@
      (t
       (when (member rule (ef-convert-rules rules))
         (replace-match (cdr rule)))))
-    ;; this is for overlapped regexp match
-    (when (and (match-end 1)
-               (< 0 (length (match-string 1))))
-      (goto-char (match-end 1)))
     ))
 
-(defun ef-region (beg end func rules comment-rules)
+(defun ef-region-1 (beg end rule rules comment-rules)
+  (let ((end-marker (set-marker (make-marker) end))
+        (converted-rule (ef-convert-rule rule))
+        (orig-string
+         ;; TODO:region
+         (buffer-substring-no-properties (point-min) (point-max))))
+    (save-excursion
+      (goto-char beg)
+      (while (and (< (point) (marker-position end-marker))
+                  (re-search-forward (car converted-rule)
+                                     (marker-position end-marker) t))
+        (electric-formatter-region-func converted-rule
+                                        rules comment-rules))
+      )
+    (prog1
+        (unless
+            (equal orig-string
+                   (buffer-substring-no-properties (point-min) (point-max)))
+          (cons beg (marker-position end-marker)))
+      (set-marker end-marker nil)
+      )))
+
+(defun ef-region (beg end rules comment-rules)
   ;; TODO: integrate to buffer
   ;; narrowing is hard to integrate to other elisp (eg. align)
-  (let ((end-marker (set-marker (make-marker) end)))
+  (combine-after-change-calls
     ;; dolist has problem with edebug?
-    (combine-after-change-calls
+    (let ((beg beg)
+          (end end))
       (mapc
        (lambda (rule)
-         (save-excursion
-           (goto-char beg)
-           (let ((converted-rule (ef-convert-rule rule)))
-             (while (and (< (point) (marker-position end-marker))
-                         (re-search-forward (car converted-rule)
-                                            (marker-position end-marker) t))
-               (funcall func converted-rule rules comment-rules)))))
+         ;; TODO:change nesting
+         (awhile (ef-region-1 beg end rule rules comment-rules)
+           (setq end (cdr it))))
        (append rules comment-rules);; Do not convert rules for easy debug
-       ))
-    (set-marker end-marker nil)))
-
+       ))))
 
 ;;;###autoload
 (defun electric-formatter-region (beg end &optional rules comment-rules)
@@ -121,13 +141,8 @@
         (beg (min beg end))
         (end (max beg end)))
     ;;end is moving
-    ;; (ef-region
-    ;;  beg end
-    ;;  #'electric-formatter-region-func
-    ;;  (append ef-rule-list ef-comment-rule-list))
     (ef-region
      beg end
-     #'electric-formatter-region-func
      (or rules ef-rule-list)
      (or comment-rules ef-comment-rule-list))
     ;;(electric-formatter-electric-1 beg end)

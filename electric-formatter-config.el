@@ -32,7 +32,7 @@
 ;; Including symbol(\\s_) for ruby's symbol ":foo"
 ;; Including *& for c's pointer operator ADD ++ -- + - ~ !
 ;; Including | for pythons string "'"
-(defvar ef-beginning-regexp (concat (regexp-opt '("+" "-" "~" "!")) "?\\(?:\\<\\|\\s'\\|\\s\"\\|\\s(\\|\\s_\\|\\s|\\)"))
+(defvar ef-beginning-regexp (concat (regexp-opt '("+" "-" "~" "!")) "?\\(?:\\<\\|\\s'\\|\\s\"\\|\\s|\\|\\s(\\|\\s_\\)"))
 (make-variable-buffer-local 'ef-beginning-regexp)
 ;;\\w include 0-9
 (defvar ef-end-regexp "\\(?:\\w\\|\\s)\\|\\s\"\\)")
@@ -53,7 +53,7 @@
 (defun ef-rule-space-after-regexp (regexp)
   (ef-rule-space-between-regexp regexp ef-beginning-regexp))
 
-(defun ef-rule-space-after (&rest strings)
+(defun ef-rule-space-after (&rest strings);; TODO:change to list
   (ef-rule-space-after-regexp (regexp-opt strings)))
 
 (defun ef-rule-space-before-regexp (regexp)
@@ -87,8 +87,8 @@
 
 (defvar ef-text-mode-rule-list
   '(("\n[\n]+" . "\n\n");;Two blank lines to one blank line
-    (ef-rule-space-between-regexp "[[:multibyte:]]" "[[:unibyte:]]")
-    (ef-rule-space-between-regexp "[[:unibyte:]]" "[[:multibyte:]]")
+    (ef-rule-space-between-regexp "[[:multibyte:]]" "[0-9A-Za-z]")
+    (ef-rule-space-between-regexp "[0-9A-Za-z]" "[[:multibyte:]]")
     ;;https://github.com/zk-phi/electric-spacing
     (ef-rule-space-after ",")
     ))
@@ -168,9 +168,9 @@
     ("\\_<or\\_>" . "||")))
 
 (defvar ef-python-mode-rule-list
-  '(;;delete space for default param: foo(a=b)
-    (ef-rule-delete-space-regexp "[(,][^(,)]+?" "=")
-    (ef-rule-delete-space-regexp "[(,][^(,)]+?=" nil)
+  '(;; delete space for default param: def foo(a=b)
+    (ef-rule-delete-space-regexp "def[ \t]+\\w+([^)]+=" nil)
+    (ef-rule-delete-space-regexp "def[ \t]+\\w+([^)]+" "=")
     ))
 
 (defvar ef-c-mode-rule-list
