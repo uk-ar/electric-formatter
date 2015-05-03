@@ -169,8 +169,8 @@
 
 (defvar ef-python-mode-rule-list
   '(;; delete space for default param: def foo(a=b)
-    (ef-rule-delete-space-regexp "def[ \t]+\\w+([^)]+=" nil)
-    (ef-rule-delete-space-regexp "def[ \t]+\\w+([^)]+" "=")
+    (ef-rule-delete-space-regexp "def[ \t]+\\(?:\\w\\|\\s_\\)+([^)]+=" nil)
+    (ef-rule-delete-space-regexp "def[ \t]+\\(?:\\w\\|\\s_\\)+([^)]+" "=")
     ))
 
 (defvar ef-c-mode-rule-list

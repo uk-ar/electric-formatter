@@ -614,8 +614,8 @@
     ;; (should (eq (length ef-rule-list) 6))
     (ef-test-execute "a=b" "a = b")
     (ef-test-execute "a=b=c" "a = b = c")
-    (ef-test-execute "def foo(bar = 'bar', baz = [], qux = 1):"
-                     "def foo(bar='bar', baz=[], qux=1):")
+    (ef-test-execute "def foo_123(bar = 'bar', baz = [], qux = 1):"
+                     "def foo_123(bar='bar', baz=[], qux=1):")
     (ef-test-region "print(a)\nfoo=1"
                     "print(a)\nfoo = 1")
     (ef-test-region "def foo(bar = 4, baz = 'qux'):\nfoo=3"
